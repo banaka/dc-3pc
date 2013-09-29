@@ -20,23 +20,41 @@ public class IncomingSock extends Thread {
 	Socket sock;
 	InputStream in;
 	private volatile boolean shutdownSet;
-	private final ConcurrentLinkedQueue<String> queue;
+	private final ConcurrentLinkedQueue<String> queueBack;
+	private final ConcurrentLinkedQueue<String> queueMain;
 	int bytesLastChecked = 0;
+        List<String> msgsMainList;
 	
-	protected IncomingSock(Socket sock) throws IOException {
+	protected IncomingSock(Socket sock, List<String> msgsMainList) throws IOException {
+            this(sock);
+            this.msgsMainList = msgsMainList;
+        }
+        protected IncomingSock(Socket sock) throws IOException {
 		this.sock = sock;
 		in = new BufferedInputStream(sock.getInputStream());
 		//in = sock.getInputStream();
 		sock.shutdownOutput();
-		queue = new ConcurrentLinkedQueue<String>();
+		queueMain = new ConcurrentLinkedQueue<String>();
+		queueBack = new ConcurrentLinkedQueue<String>();
 	}
 	
-	protected List<String> getMsgs() {
-		List<String> msgs = new ArrayList<String>();
+	protected String getMsgsBack() {
+                String msg = null;
 		String tmp;
-		while((tmp = queue.poll()) != null)
-			msgs.add(tmp);
-		return msgs;
+		while((tmp = queueBack.poll()) != null) {
+                        String[] arr = tmp.split(";");
+                        if(msgsMainList.contains(arr[1])) {
+                            queueMain.offer(tmp);
+                        } else {
+                            msg = tmp;
+                            break;
+                        }
+                }
+		return msg;
+	}
+	
+	protected String getMsgsMain() {
+		return queueMain.poll();
 	}
 	
 	public void run() {
@@ -53,7 +71,7 @@ public class IncomingSock extends Thread {
 					int curPtr = 0;
 					int curIdx;
 					while ((curIdx = dataStr.indexOf(MSG_SEP, curPtr)) != -1) {
-						queue.offer(dataStr.substring(curPtr, curIdx));
+						queueBack.offer(dataStr.substring(curPtr, curIdx));
 						curPtr = curIdx + 1;
 					}
 					in.reset();

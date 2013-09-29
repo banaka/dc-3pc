@@ -20,10 +20,11 @@ public class ListenServer extends Thread {
 	final List<IncomingSock> socketList;
 	final Config conf;
 	final ServerSocket serverSock;
+        List<String> msgsMainList;
 
 	protected ListenServer(Config conf, List<IncomingSock> sockets, List<String> msgsMainList) {
-            
-            this.ListenServer(conf, sockets);
+            this(conf, sockets);
+            this.msgsMainList = msgsMainList;
         }
 	protected ListenServer(Config conf, List<IncomingSock> sockets) {
 		this.conf = conf;
@@ -48,7 +49,7 @@ public class ListenServer extends Thread {
 		while (!killSig) {
 			try {
 				IncomingSock incomingSock = new IncomingSock(
-						serverSock.accept());
+						serverSock.accept(), msgsMainList);
 				socketList.add(incomingSock);
 				incomingSock.start();
 				conf.logger.fine(String.format(

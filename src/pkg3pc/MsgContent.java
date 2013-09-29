@@ -32,7 +32,7 @@ public enum MsgContent {
     public String content;
 
     MsgContent(String content) {
-        this.content="MsgContent: "+content+" ;";
+        this.content=content;
     }
     
 }
