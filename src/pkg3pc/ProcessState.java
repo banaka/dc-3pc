@@ -8,16 +8,17 @@ package pkg3pc;
  *
  * @author bansal
  */
-public enum State {
+public enum ProcessState {
     //Partcipants States
-    GotVoteRequest,
-    AfterVoteYes,
-    AfterVoteNo,
+    WaitForVotReq,
+    //GotVoteRequest,
+    LoggedVote,
     Uncertain,
     Precommit,
-    SedningACK,
-    Abort,
-    Commit,
+    SentACK,
+    
+    LoggedAbort,
+    LoggedCommit,
     
     //Other states possible
     GotStateReq,
