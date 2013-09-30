@@ -27,12 +27,16 @@ public enum MsgContent {
     Uncertain("Uncertain"),
     COMMITABLE("COMMITABLE"),
     COMMITED("COMMITED"),
-    ABORTED("ABORTED");
+    ABORTED("ABORTED"),
+    
+    //Check if the process is alive 
+    CHECKALIVE("CHECKALIVE"),
+    IAMALIVE("IAMALIVE");
     
     public String content;
 
     MsgContent(String content) {
-        this.content=content;
+        this.content=content+"; ";
     }
     
 }

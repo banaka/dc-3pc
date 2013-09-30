@@ -31,7 +31,7 @@ public class NetController {
     private final List<IncomingSock> inSockets;
     private final OutgoingSock[] outSockets;
     private final ListenServer listener;
-    Object objectToWait;
+    public Object objectToWait;
 
     public NetController(Config config, List<String> mainMsgsList) {
         this.config = config;

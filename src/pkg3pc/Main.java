@@ -15,10 +15,10 @@ import ut.distcomp.framework.NetController;
  */
 public class Main {
 
-    static void initiateProcess(NetController n, int pid) {
+    static void initiateProcess(NetController n, int pid, int totalProcessesCount) {
         Process p;
         if (pid == 0) {
-            p = new CoordinatorImpl(n, pid, null, true, "");
+            p = new CoordinatorImpl(n, pid, null, true, "",totalProcessesCount);
         } else {
             p = new ParticipantImpl(n, pid, null, true);
         }
@@ -31,7 +31,7 @@ public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
         // TODO code application logic here
         MessageGenerator test = new MessageGenerator();
-        System.out.println(test.genMsg(MsgContent.VoteYes, 1));
+        System.out.println(test.genMsg(MsgContent.VoteYes,"", 1));
 
         String filename = "/Users/bansal/Desktop/dc/config.txt";
         String logFile = "/Users/bansal/Desktop/dc/logs";
@@ -52,7 +52,7 @@ public class Main {
                 Config config = new Config(filename, prop, i);
 
                 NetController netController = new NetController(config, msgsMainList);
-                initiateProcess(netController, i);
+                initiateProcess(netController, i, N);
                 netControllerList.add(netController);
             } catch (Exception e) {
                 System.out.println("Trying to run config " + e);

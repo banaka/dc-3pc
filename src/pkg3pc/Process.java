@@ -7,16 +7,18 @@ package pkg3pc;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import ut.distcomp.framework.NetController;
 
 /**
  *
  * @author bansal
  */
-public class Process extends Thread{
+public class Process extends Thread {
 
     public final static String TX_MSG_SEPARATOR = "$";
-    public final static String MSG_FIELD_SEPARATOR = ";";
+//    public final static String MSG_FIELD_SEPARATOR = ";";
     int viewNumber;
     //Set to maintain the up set 
     Set<Integer> up = new HashSet<Integer>();
@@ -30,6 +32,7 @@ public class Process extends Thread{
 
     Process(NetController netController, int procNo, ProcessState stateToDie, Boolean voteInput) {
         this.netController = netController;
+        timeout = 500;
         playlist = new Hashtable<String, String>();
         viewNumber = 0;
         processBackground = new ProcessBackground(this);
@@ -37,8 +40,13 @@ public class Process extends Thread{
     }
 
     public void run() {
-        refershState();
+        try {
+            refershState();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(Process.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
+
     void processAddToPlayist(String name, String url) {
     }
 
@@ -50,12 +58,13 @@ public class Process extends Thread{
 
     public void waitUntillTimeout() {
     }
-    
+
     public void waitForInitialVoteReq() {
-        
     }
 
-    public void sendMsg(String msg) {
+    public void sendMsg(MsgContent msgCont, String data, int sendTo) {
+        String outputMsg = MessageGenerator.genMsg(msgCont, data, procNo);
+        this.netController.sendMsg(sendTo, outputMsg);
     }
 
     public void logMsg(String logMsg) {
@@ -63,19 +72,30 @@ public class Process extends Thread{
 
     }
 
-    public void refershState() {
+    public void sendStateRequestRes(int procId) {
+    }
+
+    public void CheckUpstatus() {
+    }
+
+    public void updateUpSet(int procId) {
+        //up.contains(procId);
+    }
+
+    public void refershState() throws InterruptedException {
         /*ToDo: Clear my queue both back and main */
         currentState = ProcessState.WaitForVotReq;
         initTransaction();
 
     }
 
-    public void initTransaction() {
+    public void initTransaction() throws InterruptedException {
         logMsg("NEW TX - WAITING FOR VOTE REQ");
+        this.netController.objectToWait.wait(timeout);
     }
 
     public void processVoteRequest(String command) {
-        txCommand = command.split(MSG_FIELD_SEPARATOR)[2];
+        txCommand = command.split(MessageGenerator.MSG_FIELD_SEPARATOR)[2];
     }
 
     public void abort() {
@@ -85,6 +105,16 @@ public class Process extends Thread{
 
     public void commit() {
         logMsg("COMMIT");
+        String[] cmd = txCommand.split(TX_MSG_SEPARATOR);
+        switch (cmd[0]) {
+            case "ADD":
+                //processAddToPlayist();
+                break;
+            case "EDIT":
+                break;
+            case "DELETE":
+                break;
 
+        }
     }
 }

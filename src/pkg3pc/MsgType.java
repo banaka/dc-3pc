@@ -17,7 +17,8 @@ public enum MsgType {
     public String txt;
 
      MsgType(String type) {
-        this.txt = "MsgType: "+type+" ;";
+        this.txt = "";
+        //MsgType: "+type+" ;";
     }
     
 }

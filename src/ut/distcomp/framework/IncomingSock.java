@@ -13,6 +13,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import pkg3pc.MessageGenerator;
 import pkg3pc.Process;
 
 public class IncomingSock extends Thread {
@@ -63,37 +64,39 @@ public class IncomingSock extends Thread {
 
     public void run() {
         while (!shutdownSet) {
-            try {
-                int avail = in.available();
-                if (avail == bytesLastChecked) {
-                    sleep(10);
-                } else {
-                    in.mark(avail);
-                    byte[] data = new byte[avail];
-                    in.read(data);
-                    String dataStr = new String(data);
-                    int curPtr = 0;
-                    int curIdx;
-                    while ((curIdx = dataStr.indexOf(MSG_SEP, curPtr)) != -1) {
-                        String tmp = dataStr.substring(curPtr, curIdx);
-                        
-                        String[] arr = tmp.split(Process.MSG_FIELD_SEPARATOR);
-                        if (msgsMainList.contains(arr[1])) {
-                            queueMain.offer(tmp);
-                        netController.objectToWait.notify();
-                        }else {
-                            queueBack.offer(tmp);
+            synchronized (this) {
+                try {
+                    int avail = in.available();
+                    if (avail == bytesLastChecked) {
+                        sleep(10);
+                    } else {
+                        in.mark(avail);
+                        byte[] data = new byte[avail];
+                        in.read(data);
+                        String dataStr = new String(data);
+                        int curPtr = 0;
+                        int curIdx;
+                        while ((curIdx = dataStr.indexOf(MSG_SEP, curPtr)) != -1) {
+                            String tmp = dataStr.substring(curPtr, curIdx);
+
+                            String[] arr = tmp.split(MessageGenerator.MSG_FIELD_SEPARATOR);
+                            if (msgsMainList.contains(arr[MessageGenerator.msgContent])) {
+                                queueMain.offer(tmp);
+                                this.netController.objectToWait.notify();
+                            } else {
+                                queueBack.offer(tmp);
+                            }
+                            curPtr = curIdx + 1;
                         }
-                        curPtr = curIdx + 1;
+                        in.reset();
+                        in.skip(curPtr);
+                        bytesLastChecked = avail - curPtr;
                     }
-                    in.reset();
-                    in.skip(curPtr);
-                    bytesLastChecked = avail - curPtr;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
         }
 

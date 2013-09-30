@@ -19,25 +19,33 @@ import static pkg3pc.MsgContent.VoteNo;
  * @author bansal
  */
 public class MessageGenerator {
-    
-    public String genMsg(MsgContent msgtype, int senderProcessNo){
-      String output = "MsgSender: "+senderProcessNo+" ;";
-        switch (msgtype){
+
+    public static int processNo = 0;
+    public static int msgContent = 1;
+    public static int msgData = 2;
+    public final static String MSG_FIELD_SEPARATOR = ";";
+
+    public static String genMsg(MsgContent msgtype, String data, int senderProcessNo) {
+        String output = senderProcessNo + "; ";
+        switch (msgtype) {
+
+            case VOTE_REQ:
+                return output + MsgContent.STATE_REQ.content + data;
+
             case ABORT:
                 return output
                         + MsgType.Decision.txt
-                        + MsgContent.ABORT.content 
-                        ;
+                        + MsgContent.ABORT.content;
             case COMMIT:
                 return output
                         + MsgType.Decision.txt
                         + MsgContent.COMMIT.content;
-            
+
             case ABORTED:
                 return output
                         + MsgType.Response.txt
                         + MsgContent.ABORTED.content;
-                
+
             case COMMITABLE:
                 return output
                         + MsgType.Response.txt
@@ -47,32 +55,32 @@ public class MessageGenerator {
                 return output
                         + MsgType.Response.txt
                         + MsgContent.COMMITED.content;
-            
+
             case Uncertain:
                 return output
                         + MsgType.Response.txt
                         + MsgContent.Uncertain.content;
-                
+
             case PRECOMMIT:
-                return  output
-                        + MsgType.ExpectRsponse.txt 
-                        + MsgContent.PRECOMMIT.content ;
- 
+                return output
+                        + MsgType.ExpectRsponse.txt
+                        + MsgContent.PRECOMMIT.content;
+
             case STATE_REQ:
                 return output
-                        + MsgType.ExpectRsponse.txt 
+                        + MsgType.ExpectRsponse.txt
                         + MsgContent.STATE_REQ.content;
- 
+
             case VoteNo:
-                return  output
+                return output
                         + MsgType.Response.txt
                         + MsgContent.VoteNo.content;
-                
+
             case VoteYes:
-                return  output
+                return output
                         + MsgType.Response.txt
                         + MsgContent.VoteYes.content;
-                
+
             case U_R_COORDINATOR:
                 return output
                         + MsgType.Decision.txt
@@ -80,11 +88,10 @@ public class MessageGenerator {
             case ACK:
                 return output
                         + MsgType.Response.txt
-                        + MsgContent.ACK.content ;
-                                
-        
-    }
+                        + MsgContent.ACK.content;
+
+
+        }
         return ""; //will be called in case of vote req that function needs something else too 
     }
-    
 }
