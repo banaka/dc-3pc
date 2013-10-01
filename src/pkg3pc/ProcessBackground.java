@@ -42,11 +42,13 @@ public class ProcessBackground extends Thread {
             }
         }
         p.CheckUpstatus();
-        try {
-            //thread to sleep
-            this.p.netController.objectToWait.wait(10);
-        } catch (InterruptedException ex) {
-            Logger.getLogger(ProcessBackground.class.getName()).log(Level.SEVERE, null, ex);
+        synchronized (this.p.netController.objectToWait) {
+            try {
+                //thread to sleep
+                this.p.netController.objectToWait.wait(200);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(ProcessBackground.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
     }
 }

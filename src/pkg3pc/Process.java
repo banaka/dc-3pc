@@ -64,6 +64,7 @@ public class Process extends Thread {
 
     public void sendMsg(MsgContent msgCont, String data, int sendTo) {
         String outputMsg = MessageGenerator.genMsg(msgCont, data, procNo);
+        logMsg("Sending msg "+ outputMsg + " to "+ sendTo);
         this.netController.sendMsg(sendTo, outputMsg);
     }
 
@@ -91,7 +92,9 @@ public class Process extends Thread {
 
     public void initTransaction() throws InterruptedException {
         logMsg("NEW TX - WAITING FOR VOTE REQ");
-        this.netController.objectToWait.wait(timeout);
+        synchronized (this.netController.objectToWait) {
+            this.netController.objectToWait.wait(timeout);
+        }
     }
 
     public void processVoteRequest(String command) {

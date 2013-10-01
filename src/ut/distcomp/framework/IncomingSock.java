@@ -64,39 +64,40 @@ public class IncomingSock extends Thread {
 
     public void run() {
         while (!shutdownSet) {
-            synchronized (this) {
-                try {
-                    int avail = in.available();
-                    if (avail == bytesLastChecked) {
-                        sleep(10);
-                    } else {
-                        in.mark(avail);
-                        byte[] data = new byte[avail];
-                        in.read(data);
-                        String dataStr = new String(data);
-                        int curPtr = 0;
-                        int curIdx;
-                        while ((curIdx = dataStr.indexOf(MSG_SEP, curPtr)) != -1) {
-                            String tmp = dataStr.substring(curPtr, curIdx);
 
-                            String[] arr = tmp.split(MessageGenerator.MSG_FIELD_SEPARATOR);
+            try {
+                int avail = in.available();
+                if (avail == bytesLastChecked) {
+                    sleep(10);
+                } else {
+                    in.mark(avail);
+                    byte[] data = new byte[avail];
+                    in.read(data);
+                    String dataStr = new String(data);
+                    int curPtr = 0;
+                    int curIdx;
+                    while ((curIdx = dataStr.indexOf(MSG_SEP, curPtr)) != -1) {
+                        String tmp = dataStr.substring(curPtr, curIdx);
+
+                        String[] arr = tmp.split(MessageGenerator.MSG_FIELD_SEPARATOR);
+                        synchronized (this.netController.objectToWait) {
                             if (msgsMainList.contains(arr[MessageGenerator.msgContent])) {
                                 queueMain.offer(tmp);
                                 this.netController.objectToWait.notify();
                             } else {
                                 queueBack.offer(tmp);
                             }
-                            curPtr = curIdx + 1;
                         }
-                        in.reset();
-                        in.skip(curPtr);
-                        bytesLastChecked = avail - curPtr;
+                        curPtr = curIdx + 1;
                     }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    in.reset();
+                    in.skip(curPtr);
+                    bytesLastChecked = avail - curPtr;
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
 
