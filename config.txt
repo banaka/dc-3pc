@@ -1,0 +1,13 @@
+NumProcesses=3
+port0=65501
+port1=65502
+port2=65503
+port4=65504
+port5=65505
+
+host0=localhost
+host1=localhost
+host2=localhost
+host3=localhost
+
+ProcNum=0
