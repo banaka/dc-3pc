@@ -6,6 +6,8 @@ package pkg3pc;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import ut.distcomp.framework.NetController;
 
 /**
@@ -14,14 +16,14 @@ import ut.distcomp.framework.NetController;
  */
 public class CoordinatorImpl extends Process implements Coordinator {
 
-    public void initTransaction() {
-        logMsg("START 3PC");
+    Map<Integer, String> votes = new HashMap<Integer, String>();
+
+    public void initTransaction() throws InterruptedException {
+        logMsg(" START 3PC");
         sendVoteRequets();
         processVotes();
     }
 
-    Map<Integer, String> votes = new HashMap<Integer, String>();
-    
     CoordinatorImpl(NetController netController, int procNo, ProcessState stateToDie, Boolean voteInput, String txData, int totalProcNo) {
         super(netController, procNo, stateToDie, voteInput);
         this.txCommand = txData;
@@ -38,9 +40,27 @@ public class CoordinatorImpl extends Process implements Coordinator {
     }
 
     public void processVotes() {
-        //use wait(timeout) 
-        //get for all the messages to come 
-        
-        
+        /*Ideally the wait should be just untill we get messages from all the proceses or till timeout */
+        while (votes.size() < up.size()) {
+//            synchronized (this.netController.objectToWait) {
+//                try {
+//                    //thread to sleep so that we can get some messages 
+//                    this.netController.objectToWait.wait(20);
+//                } catch (InterruptedException ex) {
+//                    Logger.getLogger(ProcessBackground.class.getName()).log(Level.SEVERE, null, ex);
+//                }
+//            }
+            String msg;
+            while ((msg = netController.getReceivedMsgBack()) != null) {
+                String[] msgFeilds = msg.split(MessageGenerator.MSG_FIELD_SEPARATOR);
+                int fromProcId = Integer.parseInt(msgFeilds[MessageGenerator.processNo].trim());
+                MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFeilds[MessageGenerator.msgContent]);
+                if (msgContent != MsgContent.VoteYes || msgContent != MsgContent.VoteNo) {
+                    votes.put(fromProcId, msgContent.content);
+                }
+            }
+            //Votes Check... 
+
+        }
     }
 }

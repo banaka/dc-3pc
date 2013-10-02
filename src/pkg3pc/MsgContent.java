@@ -6,29 +6,25 @@ package pkg3pc;
  */
 public enum MsgContent {
     //decision types
+
     ABORT("ABORT"),
     COMMIT("COMMIT"),
-
     //Requests which expect responses 
     VOTE_REQ("VOTE_REQ"), //should include partcipant list 
     STATE_REQ("STATE_REQ"), //can include up list
     PRECOMMIT("PRECOMMIT"),
-    
     //Other messages 
     U_R_COORDINATOR("U ARE COORDINATOR"),
-    
     //Vote responses
     VoteYes("VoteYes"),
     VoteNo("VoteNo"),
     //PreCommitResponse
     ACK("ACK"),
-    
     //State Req Responses
     Uncertain("Uncertain"),
     COMMITABLE("COMMITABLE"),
     COMMITED("COMMITED"),
     ABORTED("ABORTED"),
-    
     //Check if the process is alive 
     CHECKALIVE("CHECKALIVE"),
     IAMALIVE("IAMALIVE");
@@ -36,7 +32,6 @@ public enum MsgContent {
     public String content;
 
     MsgContent(String content) {
-        this.content=content+"; ";
+        this.content = content;
     }
-    
 }

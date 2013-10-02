@@ -80,12 +80,14 @@ public class IncomingSock extends Thread {
                         String tmp = dataStr.substring(curPtr, curIdx);
 
                         String[] arr = tmp.split(MessageGenerator.MSG_FIELD_SEPARATOR);
+                        //We need to syncronize the blocks where the notify and wait functions have been called
                         synchronized (this.netController.objectToWait) {
                             if (msgsMainList.contains(arr[MessageGenerator.msgContent])) {
                                 queueMain.offer(tmp);
                                 this.netController.objectToWait.notify();
                             } else {
                                 queueBack.offer(tmp);
+                                this.netController.objectToWait.notify();
                             }
                         }
                         curPtr = curIdx + 1;
