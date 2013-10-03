@@ -6,15 +6,14 @@
  */
 package ut.distcomp.framework;
 
+import pkg3pc.MessageGenerator;
+
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import pkg3pc.MessageGenerator;
-import pkg3pc.Process;
 
 public class IncomingSock extends Thread {
 
@@ -80,7 +79,7 @@ public class IncomingSock extends Thread {
                         String tmp = dataStr.substring(curPtr, curIdx);
 
                         String[] arr = tmp.split(MessageGenerator.MSG_FIELD_SEPARATOR);
-                        //We need to syncronize the blocks where the notify and wait functions have been called
+//                        We need to syncronize the blocks where the notify and wait functions have been called
                         synchronized (this.netController.objectToWait) {
                             if (msgsMainList.contains(arr[MessageGenerator.msgContent])) {
                                 queueMain.offer(tmp);

@@ -7,7 +7,6 @@
 
 package ut.distcomp.framework;
 
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -30,7 +29,7 @@ public class Config {
 		addresses = new InetAddress[numProcesses];
 		ports = new int[numProcesses];
 		for (int i=0; i < numProcesses; i++) {
-			ports[i] = 6550+i; 
+			ports[i] = 8080+i;
 			addresses[i] = InetAddress.getByName("localhost");
 		}
 			this.procNum = procNum;

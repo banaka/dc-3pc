@@ -37,7 +37,7 @@ public class ListenServer extends Thread {
 		try {
 			serverSock = new ServerSocket(port);
 			conf.logger.info(String.format(
-					"Server %d: Server connection established", procNum));
+					"Server %d: Server connection established at %d", procNum, port));
 		} catch (IOException e) {
 			String errStr = String.format(
 					"Server %d: [FATAL] Can't open server port %d", procNum,
@@ -50,8 +50,8 @@ public class ListenServer extends Thread {
 	public void run() {
 		while (!killSig) {
 			try {
-				IncomingSock incomingSock = new IncomingSock(
-						serverSock.accept(), msgsMainList,netController);
+                IncomingSock incomingSock = new IncomingSock(
+                        serverSock.accept(), msgsMainList, netController);
 				socketList.add(incomingSock);
 				incomingSock.start();
 				conf.logger.fine(String.format(
@@ -59,10 +59,12 @@ public class ListenServer extends Thread {
 						procNum, incomingSock.sock.getInetAddress()
 								.getHostName()));
 			} catch (IOException e) {
+                e.printStackTrace();
 				if (!killSig) {
 					conf.logger.log(Level.INFO, String.format(
 							"Server %d: Incoming socket failed", procNum), e);
 				}
+
 			}
 		}
 	}
