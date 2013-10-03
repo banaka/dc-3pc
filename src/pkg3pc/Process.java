@@ -4,16 +4,13 @@
  */
 package pkg3pc;
 
+import ut.distcomp.framework.NetController;
+
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static pkg3pc.MsgContent.ABORT;
-import static pkg3pc.MsgContent.CHECKALIVE;
-import static pkg3pc.MsgContent.IAMALIVE;
-import static pkg3pc.MsgContent.STATE_REQ;
-import ut.distcomp.framework.NetController;
 
 /**
  *
@@ -38,6 +35,17 @@ public class Process extends Thread {
     String txCommand;
     ProcessBackground processBackground;
     boolean vote;
+
+    public enum playlistCommand {
+        ADD(0),
+        EDIT(1),
+        DELETE(2);
+
+        private final int value;
+
+        playlistCommand(int value) { this.value = value; }
+        public int value() { return value; }
+    }
 
     Process(NetController netController, int procNo, ProcessState stateToDie, Boolean voteInput) {
         this.netController = netController;
@@ -145,14 +153,14 @@ public class Process extends Thread {
     public void commit() {
         logMsg("COMMIT");
         String[] cmd = txCommand.split(TX_MSG_SEPARATOR);
-        switch (cmd[0]) {
-            case "ADD":
+        switch (playlistCommand.valueOf(cmd[0])) {
+            case ADD:
                 processAddToPlayist(cmd[1], cmd[2]);
                 break;
-            case "EDIT":
+            case EDIT:
                 processEditPlaylist(cmd[1], cmd[2], cmd[3], cmd[4]);
                 break;
-            case "DELETE":
+            case DELETE:
                 processDelFromPlaylist(cmd[1], cmd[2]);
                 break;
 

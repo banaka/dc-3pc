@@ -1,13 +1,14 @@
 package pkg3pc;
 
+import ut.distcomp.framework.Config;
+import ut.distcomp.framework.NetController;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
-import ut.distcomp.framework.Config;
-import ut.distcomp.framework.NetController;
 
 /**
  *
@@ -29,7 +30,7 @@ public class Main {
      * @param args the command line arguments
      */
     public static void main(String[] args) throws IOException, InterruptedException {
-        String filename = "/Users/bansal/Desktop/dc/config.txt";
+        String filename = "config.txt";
 
         List<NetController> netControllerList = new ArrayList<NetController>();
 
