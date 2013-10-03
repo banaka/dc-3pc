@@ -7,6 +7,8 @@
 
 package ut.distcomp.framework;
 
+import pkg3pc.Helper;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -25,8 +27,9 @@ public class Config {
 	public Config(String filename, Properties prop, int procNum) throws FileNotFoundException, IOException {
 		logger = Logger.getLogger("NetFramework");
 
-		numProcesses = loadInt(prop,"NumProcesses");
-		addresses = new InetAddress[numProcesses];
+		numProcesses = Helper.loadInt(prop, "NumProcesses");
+		command = prop.getProperty("command").trim();
+        addresses = new InetAddress[numProcesses];
 		ports = new int[numProcesses];
 		for (int i=0; i < numProcesses; i++) {
 			ports[i] = 8080+i;
@@ -35,16 +38,12 @@ public class Config {
 			this.procNum = procNum;
 		}
 	
-	public  int loadInt(Properties prop, String s) {
-		return Integer.parseInt(prop.getProperty(s.trim()));
-	}
-	
 	/**
 	 * Default constructor for those who want to populate config file manually
 	 */
 	public Config() {
 	}
-
+    public String command;
 	/**
 	 * Array of addresses of other hosts.  All hosts should have identical info here.
 	 */

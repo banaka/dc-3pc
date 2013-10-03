@@ -4,11 +4,10 @@
  */
 package pkg3pc;
 
+import ut.distcomp.framework.NetController;
+
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import ut.distcomp.framework.NetController;
 
 /**
  *
@@ -18,9 +17,11 @@ public class CoordinatorImpl extends Process implements Coordinator {
 
     Map<Integer, String> votes = new HashMap<Integer, String>();
 
+    @Override
     public void initTransaction() throws InterruptedException {
         logMsg(" START 3PC");
-        sendVoteRequets();
+        sleep(50);
+        sendVoteRequests();
         processVotes();
     }
 
@@ -33,7 +34,7 @@ public class CoordinatorImpl extends Process implements Coordinator {
 
     }
 
-    public void sendVoteRequets() {
+    public void sendVoteRequests() {
         for (int i : up) {
             sendMsg(MsgContent.VOTE_REQ, txCommand, i);
         }

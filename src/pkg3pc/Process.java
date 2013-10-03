@@ -108,23 +108,28 @@ public class Process extends Thread {
         /*ToDo: Clear my queue both back and main */
         currentState = ProcessState.WaitForVotReq;
         initTransaction();
-
     }
 
     public void initTransaction() throws InterruptedException {
         logMsg("NEW TX - WAITING FOR VOTE REQ");
        // synchronized (this.netController.objectToWait) {
             //this.netController.objectToWait.wait(timeout);
-            String msg;
-            while ((msg = this.netController.getReceivedMsgMain()) != null) {
+            while(true){
+                String msg;
+                while ((msg = this.netController.getReceivedMsgMain()) == null)
+                    sleep(10);
                 String[] msgFeilds = msg.split(MessageGenerator.MSG_FIELD_SEPARATOR);
+                System.out.println("Proc "+ procNo+"Received a message!!! - "+msg);
                 int fromProcId = Integer.parseInt(msgFeilds[MessageGenerator.processNo].trim());
-                String txCmd = msgFeilds[MessageGenerator.msgData];
                 MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFeilds[MessageGenerator.msgContent]);
                 switch (msgContent) {
                     case VOTE_REQ:
                         logMsg("RECIEVED VOTE REQ");
-                        processVoteRequest(txCmd, fromProcId);
+                        try{
+                            processVoteRequest(msgFeilds[MessageGenerator.msgData], fromProcId);
+                        } catch(ArrayIndexOutOfBoundsException e){
+                            System.out.println("Please Send your transaction command with Vote Req!!");
+                        }
                         break;
                 }
             }
@@ -132,13 +137,13 @@ public class Process extends Thread {
     }
 
     public void processVoteRequest(String command, int sendTo) {
-        txCommand = command.split(MessageGenerator.MSG_FIELD_SEPARATOR)[MessageGenerator.msgData];
+        txCommand = command;
         if (vote) {
             sendMsg(MsgContent.VoteYes, command, sendTo);
         } else {
             sendMsg(MsgContent.VoteNo, command, sendTo);
         }
-        logMsg("SENT VOTE ");
+        logMsg("SENT VOTE - "+vote);
 
     }
 

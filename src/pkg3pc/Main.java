@@ -16,10 +16,10 @@ import java.util.Properties;
  */
 public class Main {
 
-    static void initiateProcess(NetController n, int pid, int totalProcessesCount) {
+    static void initiateProcess(NetController n, int pid, Config config) {
         Process p;
         if (pid == 0) {
-            p = new CoordinatorImpl(n, pid, null, true, "",totalProcessesCount);
+            p = new CoordinatorImpl(n, pid, null, true, config.command, config.numProcesses);
         } else {
             p = new ParticipantImpl(n, pid, null, true);
         }
@@ -49,7 +49,7 @@ public class Main {
             try {
                 Config config = new Config(filename, prop, i);
                 NetController netController = new NetController(config, msgsMainList);
-                initiateProcess(netController, i, N);
+                initiateProcess(netController, i, config);
                 netControllerList.add(netController);
              } catch (Exception e) {
                 System.out.println("Trying to run config " + e);

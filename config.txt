@@ -1,1 +1,2 @@
 NumProcesses=3
+command="ADD$dhinchak$songs.pk"
