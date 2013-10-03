@@ -38,10 +38,10 @@ public class Main {
         prop.load(new FileInputStream(filename));
 
         List<String> msgsMainList = new ArrayList<String>(
-                Arrays.asList(MsgContent.ABORT.content, 
-                MsgContent.COMMIT.content, 
-                MsgContent.VOTE_REQ.content,
-                MsgContent.PRECOMMIT.content));
+                Arrays.asList(MsgContent.ABORT.content,
+                        MsgContent.COMMIT.content,
+                        MsgContent.VOTE_REQ.content,
+                        MsgContent.PRECOMMIT.content));
 
         int N = Helper.loadInt(prop, "NumProcesses");
 
@@ -51,38 +51,15 @@ public class Main {
                 NetController netController = new NetController(config, msgsMainList);
                 initiateProcess(netController, i, N);
                 netControllerList.add(netController);
-            } catch (Exception e) {
+             } catch (Exception e) {
                 System.out.println("Trying to run config " + e);
             }
         }
 
-
-//
-//        for (int i = 0; i < N; i++) {
-//            NetController tmp = netControllerList.get(i);
-//            for (int j = 0; j < N; j++) {
-//                tmp.sendMsg(j, "Hello this is " + i + ";COMMIT");
-//                tmp.sendMsg(j, "Hello this is " + i + ";NO---COOMIT");
-//            }
-//        }
-//        
-//        Thread.sleep(2000);
-//        for (int j = 0; j < N; j++) {
-//            {
-//                for (int i = 0; i < 4; i++) {
-//                    NetController tmp = netControllerList.get(j);
-//                    
-//                    String output = tmp.getReceivedMsgMain();
-//                    System.out.println("Main : " + j + " " + output);
-//                    output = tmp.getReceivedMsgBack();
-//                    System.out.println("Back : " + j + " " + output);
-//                }
-//            }
-
         //Shutdown of all the processes after the Main execution Closes...
-        for (int i = 0; i < N; i++) {
-            NetController netController = netControllerList.get(i);
-            netController.shutdown();
-        }
+//        for (int i = 0; i < N; i++) {
+//            NetController netController = netControllerList.get(i);
+//            netController.shutdown();
+//        }
     }
 }
