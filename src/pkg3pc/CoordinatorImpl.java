@@ -18,9 +18,8 @@ public class CoordinatorImpl extends Process implements Coordinator {
     Map<Integer, String> votes = new HashMap<Integer, String>();
 
     @Override
-    public void initTransaction() throws InterruptedException {
+    public void initTransaction() {
         logMsg(" START 3PC");
-        sleep(50);
         sendVoteRequests();
         processVotes();
     }
@@ -51,7 +50,7 @@ public class CoordinatorImpl extends Process implements Coordinator {
         }
     }
 
-    public void processVotes() throws InterruptedException{
+    public void processVotes() {
         /*Ideally the wait should be just untill we get messages from all the proceses or till timeout */
         while (votes.size() < (up.size()-1)) {
 //            synchronized (this.netController.objectToWait) {
@@ -65,7 +64,7 @@ public class CoordinatorImpl extends Process implements Coordinator {
 //            while(true){
             String msg;
             while ((msg = this.netController.getReceivedMsgMain()) == null)
-                sleep(10);
+                sleeping_for(10);
             logMsg("Received a message!!! - "+msg);
             String[] msgFeilds = msg.split(MessageGenerator.MSG_FIELD_SEPARATOR);
             int fromProcId = Integer.parseInt(msgFeilds[MessageGenerator.processNo].trim());

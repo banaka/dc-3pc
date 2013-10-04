@@ -9,6 +9,7 @@ package ut.distcomp.framework;
 
 import pkg3pc.Helper;
 
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -24,11 +25,14 @@ public class Config {
 	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
-	public Config(String filename, Properties prop, int procNum) throws FileNotFoundException, IOException {
-		logger = Logger.getLogger("NetFramework");
+	public Config(String filename, int procNum) throws FileNotFoundException, IOException {
+        Properties prop = new Properties();
+        prop.load(new FileInputStream(filename));
+        numProcesses = Helper.loadInt(prop, "NumProcesses");
+        command = prop.getProperty("command").trim();
 
-		numProcesses = Helper.loadInt(prop, "NumProcesses");
-		command = prop.getProperty("command").trim();
+        logger = Logger.getLogger("NetFramework");
+
         addresses = new InetAddress[numProcesses];
 		ports = new int[numProcesses];
 		for (int i=0; i < numProcesses; i++) {

@@ -31,16 +31,15 @@ public class NetController {
     private final List<IncomingSock> inSockets;
     private final OutgoingSock[] outSockets;
     private final ListenServer listener;
-    public Object objectToWait;
+//    public Object objectToWait;
 
     public NetController(Config config, List<String> mainMsgsList) {
         this.config = config;
-        System.out.println("Creating Sockets for " + config.procNum);
         inSockets = Collections.synchronizedList(new ArrayList<IncomingSock>());
 //        listener = new ListenServer(config, inSockets, mainMsgsList, this);
         listener = new ListenServer(config, inSockets, mainMsgsList);
         outSockets = new OutgoingSock[config.numProcesses];
-        objectToWait = new Object();
+//        objectToWait = new Object();
         listener.start();
     }
 
