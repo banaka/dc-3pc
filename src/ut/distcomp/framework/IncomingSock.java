@@ -25,12 +25,13 @@ public class IncomingSock extends Thread {
     private final ConcurrentLinkedQueue<String> queueMain;
     int bytesLastChecked = 0;
     List<String> msgsMainList;
-    NetController netController;
+//    NetController netController;
 
-    protected IncomingSock(Socket sock, List<String> msgsMainList, NetController netController1) throws IOException {
+//    protected IncomingSock(Socket sock, List<String> msgsMainList, NetController netController1) throws IOException {
+    protected IncomingSock(Socket sock, List<String> msgsMainList) throws IOException {
         this(sock);
         this.msgsMainList = msgsMainList;
-        this.netController = netController1;
+//        this.netController = netController1;
     }
 
     protected IncomingSock(Socket sock) throws IOException {
@@ -43,18 +44,20 @@ public class IncomingSock extends Thread {
     }
 
     protected String getMsgsBack() {
-        String msg = null;
-        String tmp;
-        while ((tmp = queueBack.poll()) != null) {
-            String[] arr = tmp.split(";");
-            if (msgsMainList.contains(arr[1])) {
-                queueMain.offer(tmp);
-            } else {
-                msg = tmp;
-                break;
-            }
-        }
-        return msg;
+        return queueBack.poll();
+
+//        String msg = null;
+//        String tmp;
+//        while ((tmp = queueBack.poll()) != null) {
+//            String[] arr = tmp.split(MSG_SEP);
+//            if (msgsMainList.contains(arr[1])) {
+//                queueMain.offer(tmp);
+//            } else {
+//                msg = tmp;
+//                break;
+//            }
+//        }
+//        return msg;
     }
 
     protected String getMsgsMain() {
@@ -80,15 +83,15 @@ public class IncomingSock extends Thread {
 
                         String[] arr = tmp.split(MessageGenerator.MSG_FIELD_SEPARATOR);
 //                        We need to syncronize the blocks where the notify and wait functions have been called
-                        synchronized (this.netController.objectToWait) {
+//                        synchronized (this.netController.objectToWait) {
                             if (msgsMainList.contains(arr[MessageGenerator.msgContent])) {
                                 queueMain.offer(tmp);
-                                this.netController.objectToWait.notify();
+//                                this.netController.objectToWait.notify();
                             } else {
                                 queueBack.offer(tmp);
-                                this.netController.objectToWait.notify();
+//                                this.netController.objectToWait.notify();
                             }
-                        }
+//                        }
                         curPtr = curIdx + 1;
                     }
                     in.reset();

@@ -37,7 +37,8 @@ public class NetController {
         this.config = config;
         System.out.println("Creating Sockets for " + config.procNum);
         inSockets = Collections.synchronizedList(new ArrayList<IncomingSock>());
-        listener = new ListenServer(config, inSockets, mainMsgsList, this);
+//        listener = new ListenServer(config, inSockets, mainMsgsList, this);
+        listener = new ListenServer(config, inSockets, mainMsgsList);
         outSockets = new OutgoingSock[config.numProcesses];
         objectToWait = new Object();
         listener.start();
@@ -132,10 +133,8 @@ public class NetController {
             while (iter.hasNext()) {
                 IncomingSock curSock = iter.next();
                 try {
-                    msg = curSock.getMsgsBack();
-                    if (msg != null) {
+                    if ((msg = curSock.getMsgsBack()) != null)
                         break;
-                    }
                 } catch (Exception e) {
                     config.logger.log(Level.INFO,
                             "Server " + config.procNum + " received bad data on a socket", e);
@@ -155,11 +154,8 @@ public class NetController {
             while (iter.hasNext()) {
                 IncomingSock curSock = iter.next();
                 try {
-                    msg = curSock.getMsgsMain();
-                    if (msg != null) {
+                    if ((msg = curSock.getMsgsMain())!= null)
                         break;
-                    }
-
                 } catch (Exception e) {
                     config.logger.log(Level.INFO,
                             "Server " + config.procNum + " received bad data on a socket", e);
