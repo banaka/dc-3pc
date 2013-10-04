@@ -25,6 +25,16 @@ public class CoordinatorImpl extends Process implements Coordinator {
         processVotes();
     }
 
+    @Override
+    public void precommit() {
+        logMsg("PRECOMMIT");
+    }
+
+    @Override
+    public void handleSpecificCommands(MsgContent command, String[] msgFields) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     CoordinatorImpl(NetController netController, int procNo, ProcessState stateToDie, Boolean voteInput, String txData, int totalProcNo) {
         super(netController, procNo, stateToDie, voteInput);
         this.txCommand = txData;

@@ -10,15 +10,8 @@ package pkg3pc;
  */
 public interface Participant {
     
-    public void processVoteRequest();
+    public void processVoteRequest(String command, int from);
     
     public void processStateRequest();
-    
-    public void abort();
-    
-    public void commit();
-    
-    public void precommit();
-    
-    
+
 }

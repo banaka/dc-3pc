@@ -16,7 +16,7 @@ import java.util.logging.Logger;
  *
  * @author bansal
  */
-public class Process extends Thread {
+abstract public class Process extends Thread {
 
     public final static String TX_MSG_SEPARATOR = "\\$";
     //FORMAT FOR Transaction
@@ -129,20 +129,14 @@ public class Process extends Thread {
             int fromProcId = Integer.parseInt(msgFeilds[MessageGenerator.processNo].trim());
             MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFeilds[MessageGenerator.msgContent]);
             switch (msgContent) {
-                case VOTE_REQ:
-                    logMsg("RECIEVED VOTE REQ");
-                    try{
-                        processVoteRequest(msgFeilds[MessageGenerator.msgData], fromProcId);
-                    } catch(ArrayIndexOutOfBoundsException e){
-                        System.out.println("Please Send your transaction command with Vote Req!!");
-                    }
-                    break;
                 case COMMIT:
                     commit();
                     break;
                 case ABORT:
                     abort();
                     break;
+                default:
+                    handleSpecificCommands(msgContent, msgFeilds);
             }
         }
     }
@@ -161,9 +155,9 @@ public class Process extends Thread {
         logMsg("ABORT :(");
     }
 
-    public void precommit() {
-        logMsg("PRECOMMIT");
-    }
+    abstract public void precommit();
+
+    abstract public void handleSpecificCommands(MsgContent command, String[] msgFields);
 
     public void commit() {
         logMsg("COMMIT");

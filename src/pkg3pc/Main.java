@@ -24,7 +24,7 @@ public class Main {
             boolean vote = true;
             if(pid == 1)
                 vote = false;
-            p = new ParticipantImpl(n, pid, null, vote);
+            p = new ParticipantImpl(n, pid, null, true);
         }
         p.start();
     }
