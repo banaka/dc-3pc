@@ -36,13 +36,14 @@ public class CoordinatorImpl extends Process implements Coordinator {
 
     public void sendVoteRequests() {
         for (int i : up) {
-            sendMsg(MsgContent.VOTE_REQ, txCommand, i);
+            if(i != procNo)
+                sendMsg(MsgContent.VOTE_REQ, txCommand, i);
         }
     }
 
-    public void processVotes() {
+    public void processVotes() throws InterruptedException{
         /*Ideally the wait should be just untill we get messages from all the proceses or till timeout */
-        while (votes.size() < up.size()) {
+        while (votes.size() < (up.size()-1)) {
 //            synchronized (this.netController.objectToWait) {
 //                try {
 //                    //thread to sleep so that we can get some messages 
@@ -51,17 +52,19 @@ public class CoordinatorImpl extends Process implements Coordinator {
 //                    Logger.getLogger(ProcessBackground.class.getName()).log(Level.SEVERE, null, ex);
 //                }
 //            }
+//            while(true){
             String msg;
-            while ((msg = netController.getReceivedMsgBack()) != null) {
-                String[] msgFeilds = msg.split(MessageGenerator.MSG_FIELD_SEPARATOR);
-                int fromProcId = Integer.parseInt(msgFeilds[MessageGenerator.processNo].trim());
-                MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFeilds[MessageGenerator.msgContent]);
-                if (msgContent != MsgContent.VoteYes || msgContent != MsgContent.VoteNo) {
-                    votes.put(fromProcId, msgContent.content);
-                }
+            while ((msg = this.netController.getReceivedMsgMain()) == null)
+                sleep(10);
+            logMsg("Received a message!!! - "+msg);
+            String[] msgFeilds = msg.split(MessageGenerator.MSG_FIELD_SEPARATOR);
+            int fromProcId = Integer.parseInt(msgFeilds[MessageGenerator.processNo].trim());
+            MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFeilds[MessageGenerator.msgContent]);
+            if (msgContent != MsgContent.VoteYes || msgContent != MsgContent.VoteNo) {
+                votes.put(fromProcId, msgContent.content);
             }
-            //Votes Check... 
-
         }
+        //Votes Check...
+
     }
 }

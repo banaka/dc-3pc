@@ -119,7 +119,7 @@ public class Process extends Thread {
                 while ((msg = this.netController.getReceivedMsgMain()) == null)
                     sleep(10);
                 String[] msgFeilds = msg.split(MessageGenerator.MSG_FIELD_SEPARATOR);
-                System.out.println("Proc "+ procNo+"Received a message!!! - "+msg);
+                logMsg("Received a message!!! - "+msg);
                 int fromProcId = Integer.parseInt(msgFeilds[MessageGenerator.processNo].trim());
                 MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFeilds[MessageGenerator.msgContent]);
                 switch (msgContent) {

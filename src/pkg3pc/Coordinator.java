@@ -11,7 +11,7 @@ package pkg3pc;
 public interface Coordinator { 
      public void sendVoteRequests();
      
-     public void processVotes();
+     public void processVotes() throws InterruptedException;
     
     
 }
