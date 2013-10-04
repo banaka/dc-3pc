@@ -18,7 +18,7 @@ import java.util.logging.Logger;
  */
 public class Process extends Thread {
 
-    public final static String TX_MSG_SEPARATOR = "$";
+    public final static String TX_MSG_SEPARATOR = "\\$";
     //FORMAT FOR Transaction
     //ADD$Song$URL
     //EDIT$SONGOLD$URLOLD$NEWSONG$NEWURL
@@ -70,6 +70,7 @@ public class Process extends Thread {
     }
 
     void processAddToPlayist(String name, String url) {
+        logMsg("ADDDING item to playlist - "+name+" "+url+" :D ");
     }
 
     void processDelFromPlaylist(String name, String url) {
@@ -114,28 +115,37 @@ public class Process extends Thread {
         logMsg("NEW TX - WAITING FOR VOTE REQ");
        // synchronized (this.netController.objectToWait) {
             //this.netController.objectToWait.wait(timeout);
-            while(true){
-                String msg;
-                while ((msg = this.netController.getReceivedMsgMain()) == null)
-                    sleep(10);
-                String[] msgFeilds = msg.split(MessageGenerator.MSG_FIELD_SEPARATOR);
-                logMsg("Received a message!!! - "+msg);
-                int fromProcId = Integer.parseInt(msgFeilds[MessageGenerator.processNo].trim());
-                MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFeilds[MessageGenerator.msgContent]);
-                switch (msgContent) {
-                    case VOTE_REQ:
-                        logMsg("RECIEVED VOTE REQ");
-                        try{
-                            processVoteRequest(msgFeilds[MessageGenerator.msgData], fromProcId);
-                        } catch(ArrayIndexOutOfBoundsException e){
-                            System.out.println("Please Send your transaction command with Vote Req!!");
-                        }
-                        break;
-                }
-            }
         //}
+        startListening();
     }
 
+    public void startListening() throws InterruptedException {
+        while(true){
+            String msg;
+            while ((msg = this.netController.getReceivedMsgMain()) == null)
+                sleep(10);
+            String[] msgFeilds = msg.split(MessageGenerator.MSG_FIELD_SEPARATOR);
+            logMsg("Received a message!!! - "+msg);
+            int fromProcId = Integer.parseInt(msgFeilds[MessageGenerator.processNo].trim());
+            MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFeilds[MessageGenerator.msgContent]);
+            switch (msgContent) {
+                case VOTE_REQ:
+                    logMsg("RECIEVED VOTE REQ");
+                    try{
+                        processVoteRequest(msgFeilds[MessageGenerator.msgData], fromProcId);
+                    } catch(ArrayIndexOutOfBoundsException e){
+                        System.out.println("Please Send your transaction command with Vote Req!!");
+                    }
+                    break;
+                case COMMIT:
+                    commit();
+                    break;
+                case ABORT:
+                    abort();
+                    break;
+            }
+        }
+    }
     public void processVoteRequest(String command, int sendTo) {
         txCommand = command;
         if (vote) {
@@ -148,7 +158,7 @@ public class Process extends Thread {
     }
 
     public void abort() {
-        logMsg("ABORT");
+        logMsg("ABORT :(");
     }
 
     public void precommit() {

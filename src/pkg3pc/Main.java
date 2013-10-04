@@ -21,7 +21,10 @@ public class Main {
         if (pid == 0) {
             p = new CoordinatorImpl(n, pid, null, true, config.command, config.numProcesses);
         } else {
-            p = new ParticipantImpl(n, pid, null, true);
+            boolean vote = true;
+            if(pid == 1)
+                vote = false;
+            p = new ParticipantImpl(n, pid, null, vote);
         }
         p.start();
     }

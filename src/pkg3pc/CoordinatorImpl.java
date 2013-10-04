@@ -60,11 +60,30 @@ public class CoordinatorImpl extends Process implements Coordinator {
             String[] msgFeilds = msg.split(MessageGenerator.MSG_FIELD_SEPARATOR);
             int fromProcId = Integer.parseInt(msgFeilds[MessageGenerator.processNo].trim());
             MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFeilds[MessageGenerator.msgContent]);
-            if (msgContent != MsgContent.VoteYes || msgContent != MsgContent.VoteNo) {
+            if (msgContent == MsgContent.VoteYes || msgContent == MsgContent.VoteNo) {
                 votes.put(fromProcId, msgContent.content);
             }
         }
-        //Votes Check...
 
+        //Votes Check...
+        System.out.println(votes);
+        boolean allSaidYes = true;
+        if(this.vote == false)
+            allSaidYes = false;
+        for(String vote : votes.values()){
+            if("VoteNo".equals(vote))
+                allSaidYes = false;
+        }
+
+        if(allSaidYes){
+            logMsg("COMMIT");
+            for(int i : up)
+                sendMsg(MsgContent.COMMIT, "", i);
+        }else{
+            logMsg("ABORT");
+            for(int i : up)
+                sendMsg(MsgContent.ABORT, "", i);
+        }
+        startListening();
     }
 }
