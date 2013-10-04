@@ -41,7 +41,9 @@ public class Main {
                 Arrays.asList(MsgContent.ABORT.content,
                         MsgContent.COMMIT.content,
                         MsgContent.VOTE_REQ.content,
-                        MsgContent.PRECOMMIT.content));
+                        MsgContent.PRECOMMIT.content,
+                        MsgContent.VoteYes.content,
+                        MsgContent.VoteNo.content));
 
         int N = Helper.loadInt(prop, "NumProcesses");
 
