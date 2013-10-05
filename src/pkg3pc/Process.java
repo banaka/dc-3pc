@@ -144,21 +144,26 @@ abstract public class Process {
         }
     }
 
-    public void startListening(int globalTimeout) {
-        int globalCounter = 0;
-        while(globalTimeout == 0 || globalCounter < globalTimeout){
-            String msg;
-            int counter = globalCounter;
-            while ((msg = this.netController.getReceivedMsgMain()) == null) {
-                if(counter >= timeout){
-                    msg = procNo + ";TIMEOUT";
-                    break;
-                }
-                sleeping_for(10);
-                counter += 10;
+    public String waitTillTimeoutForMessage(GlobalCounter globalCounter, int globalTimeout) {
+        String msg;
+        int counter = globalCounter.value;
+        while ((msg = this.netController.getReceivedMsgMain()) == null) {
+            if(counter >= timeout){
+                msg = procNo + ";TIMEOUT";
+                break;
             }
-            if(globalTimeout != 0)
-                globalCounter += counter;
+            sleeping_for(10);
+            counter += 10;
+        }
+        if(globalTimeout != 0)
+            globalCounter.value += counter;
+        return msg;
+    }
+
+    public void startListening(int globalTimeout) {
+        GlobalCounter globalCounter = new GlobalCounter(0);
+        while(globalTimeout == 0 || globalCounter.value < globalTimeout){
+            String msg = waitTillTimeoutForMessage(globalCounter, globalTimeout);
             String[] msgFields = msg.split(MessageGenerator.MSG_FIELD_SEPARATOR);
             logMsg("Received a message!!! - "+msg);
             int fromProcId = Integer.parseInt(msgFields[MessageGenerator.processNo].trim());
@@ -211,4 +216,11 @@ abstract public class Process {
 
         }
     }
+}
+
+class GlobalCounter {
+    GlobalCounter(int value){
+        this.value = value;
+    }
+    public int value;
 }
