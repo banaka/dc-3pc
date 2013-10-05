@@ -40,8 +40,10 @@ public class ParticipantImpl extends Process implements Participant {
                 switch(currentState) {
                     case Uncertain:
                         break;
+                    default:
+                        System.out.println("Timed out ...relistening...");
                 }
-                System.out.println("Timed out ...relistening...");
+                break;
             default:
                 logMsg("Not expected ::"+msgContent.content);
         }

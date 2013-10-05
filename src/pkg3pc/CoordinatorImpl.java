@@ -57,7 +57,7 @@ public class CoordinatorImpl extends Process implements Coordinator {
         logMsg("ABORT");
         currentState = ProcessState.LoggedAbort;
         for(int i : up)
-            if(this.votes.get(i).equals("VoteYes"))
+            if(("VoteYes").equals(this.votes.get(i)))
                 sendMsg(MsgContent.ABORT, "", i);
     }
     private void send_commit() {
