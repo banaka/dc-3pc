@@ -18,8 +18,9 @@ public enum ProcessState {
     SentACK,
     
     LoggedAbort,
+    Abort,
     LoggedCommit,
-    
+    Commit,
     //Other states possible
     GotStateReq,
     

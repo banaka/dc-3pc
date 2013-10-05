@@ -15,19 +15,6 @@ public class ParticipantImpl extends Process implements Participant {
         super(netController, procNo, stateToDie, voteInput);        
     }
 
-    public void processVoteRequest(String command, int sendTo) {
-        txCommand = command;
-        logMsg("SENT VOTE - "+vote);
-        currentState = ProcessState.LoggedVote;
-
-        if (vote) {
-            sendMsg(MsgContent.VoteYes, command, sendTo);
-        } else {
-            sendMsg(MsgContent.VoteNo, command, sendTo);
-        }
-        currentState = ProcessState.Uncertain;
-    }
-    
     public void processStateRequest(){
         
     }
@@ -44,12 +31,16 @@ public class ParticipantImpl extends Process implements Participant {
             case VOTE_REQ:
                 logMsg("RECIEVED VOTE REQ");
                 try{
-                    processVoteRequest(msgFields[MessageGenerator.msgData], fromProcId);
+                    return processVoteRequest(msgFields[MessageGenerator.msgData], fromProcId);
                 } catch(ArrayIndexOutOfBoundsException e){
                     System.out.println("Please Send your transaction command with Vote Req!!");
                 }
                 break;
             case TIMEOUT:
+                switch(currentState) {
+                    case Uncertain:
+                        break;
+                }
                 System.out.println("Timed out ...relistening...");
             default:
                 logMsg("Not expected ::"+msgContent.content);
@@ -57,4 +48,18 @@ public class ParticipantImpl extends Process implements Participant {
         return true;
     }
 
+    public boolean processVoteRequest(String command, int sendTo) {
+        txCommand = command;
+        if (vote) {
+            logMsg("SENT VOTE - "+vote);
+            currentState = ProcessState.LoggedVote;
+            sendMsg(MsgContent.VoteYes, command, sendTo);
+            currentState = ProcessState.Uncertain;
+        } else {
+//            sendMsg(MsgContent.VoteNo, command, sendTo);
+            abort();
+            return false;
+        }
+        return true;
+    }
 }

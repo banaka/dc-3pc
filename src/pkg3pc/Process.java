@@ -104,15 +104,17 @@ abstract public class Process {
     }
 
     public void refreshState() {
+        while(true) {
         //ToDo: Read my DtLog and check whether init transaction or recover
         /*ToDo: Clear my queue both back and main */
         // If init transaction //
-        currentState = ProcessState.WaitForVotReq;
         initTransaction();
+        }
     }
 
     public void initTransaction() {
         logMsg("NEW TX - WAITING FOR VOTE REQ");
+        currentState = ProcessState.WaitForVotReq;
        // synchronized (this.netController.objectToWait) {
             //this.netController.objectToWait.wait(timeout);
         //}
@@ -153,6 +155,7 @@ abstract public class Process {
                     break;
                 case ABORT:
                     abort();
+                    shouldContinue = false;
                     break;
                 default:
                     shouldContinue = handleSpecificCommands(msgContent, msgFields);
@@ -161,19 +164,12 @@ abstract public class Process {
                 break;
         }
     }
-    public void processVoteRequest(String command, int sendTo) {
-        txCommand = command;
-        if (vote) {
-            sendMsg(MsgContent.VoteYes, command, sendTo);
-        } else {
-            sendMsg(MsgContent.VoteNo, command, sendTo);
-        }
-        logMsg("SENT VOTE - "+vote);
-
-    }
 
     public void abort() {
+        currentState = ProcessState.LoggedAbort;
         logMsg("ABORT :(");
+        currentState = ProcessState.Abort;
+        //ToDo: Prepare for new transaction
     }
 
     abstract public void precommit();
@@ -181,7 +177,9 @@ abstract public class Process {
     abstract public boolean handleSpecificCommands(MsgContent command, String[] msgFields);
 
     public void commit() {
+        currentState = ProcessState.LoggedCommit;
         logMsg("COMMIT");
+        currentState = ProcessState.Commit;
         String[] cmd = txCommand.split(TX_MSG_SEPARATOR);
         switch (playlistCommand.valueOf(cmd[0])) {
             case ADD:
