@@ -24,7 +24,7 @@ public enum ProcessState {
     GotStateReq,
     
     //Coordinator States
-    Coordinator,
+//    Coordinator,
     VoteReq,
     VoteCounting,
     DecidePreCommit,

@@ -38,20 +38,23 @@ public class ParticipantImpl extends Process implements Participant {
     }
 
     @Override
-    public void handleSpecificCommands(MsgContent msgContent, String[] msgFeilds) {
-        int fromProcId = Integer.parseInt(msgFeilds[MessageGenerator.processNo].trim());
+    public boolean handleSpecificCommands(MsgContent msgContent, String[] msgFields) {
+        int fromProcId = Integer.parseInt(msgFields[MessageGenerator.processNo].trim());
         switch (msgContent) {
             case VOTE_REQ:
                 logMsg("RECIEVED VOTE REQ");
                 try{
-                    processVoteRequest(msgFeilds[MessageGenerator.msgData], fromProcId);
+                    processVoteRequest(msgFields[MessageGenerator.msgData], fromProcId);
                 } catch(ArrayIndexOutOfBoundsException e){
                     System.out.println("Please Send your transaction command with Vote Req!!");
                 }
                 break;
+            case TIMEOUT:
+                System.out.println("Timed out ...relistening...");
             default:
                 logMsg("Not expected ::"+msgContent.content);
         }
+        return true;
     }
 
 }

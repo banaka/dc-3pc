@@ -50,7 +50,7 @@ abstract public class Process {
         this.vote = voteInput;
         this.procNo = procNo;
         this.endState = stateToDie;
-        timeout = 10;
+        timeout = 5000;
         playlist = new Hashtable<String, String>();
         viewNumber = 0;
         processBackground = new ProcessBackground(this);
@@ -116,7 +116,7 @@ abstract public class Process {
        // synchronized (this.netController.objectToWait) {
             //this.netController.objectToWait.wait(timeout);
         //}
-        startListening();
+        startListening(0);
     }
 
     public void sleeping_for(int milli) {
@@ -127,15 +127,26 @@ abstract public class Process {
         }
     }
 
-    public void startListening() {
-        while(true){
+    public void startListening(int globalTimeout) {
+        int globalCounter = 0;
+        while(globalTimeout == 0 || globalCounter < globalTimeout){
             String msg;
-            while ((msg = this.netController.getReceivedMsgMain()) == null)
+            int counter = globalCounter;
+            while ((msg = this.netController.getReceivedMsgMain()) == null) {
+                if(counter >= timeout){
+                    msg = procNo + ";TIMEOUT";
+                    break;
+                }
                 sleeping_for(10);
-            String[] msgFeilds = msg.split(MessageGenerator.MSG_FIELD_SEPARATOR);
+                counter += 10;
+            }
+            if(globalTimeout != 0)
+                globalCounter += counter;
+            String[] msgFields = msg.split(MessageGenerator.MSG_FIELD_SEPARATOR);
             logMsg("Received a message!!! - "+msg);
-            int fromProcId = Integer.parseInt(msgFeilds[MessageGenerator.processNo].trim());
-            MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFeilds[MessageGenerator.msgContent]);
+//            int fromProcId = Integer.parseInt(msgFields[MessageGenerator.processNo].trim());
+            MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFields[MessageGenerator.msgContent]);
+            boolean shouldContinue = true;
             switch (msgContent) {
                 case COMMIT:
                     commit();
@@ -144,8 +155,10 @@ abstract public class Process {
                     abort();
                     break;
                 default:
-                    handleSpecificCommands(msgContent, msgFeilds);
+                    shouldContinue = handleSpecificCommands(msgContent, msgFields);
             }
+            if(!shouldContinue)
+                break;
         }
     }
     public void processVoteRequest(String command, int sendTo) {
@@ -165,7 +178,7 @@ abstract public class Process {
 
     abstract public void precommit();
 
-    abstract public void handleSpecificCommands(MsgContent command, String[] msgFields);
+    abstract public boolean handleSpecificCommands(MsgContent command, String[] msgFields);
 
     public void commit() {
         logMsg("COMMIT");

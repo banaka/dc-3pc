@@ -9,6 +9,8 @@ public enum MsgContent {
 
     ABORT("ABORT"),
     COMMIT("COMMIT"),
+
+    TIMEOUT("TIMEOUT"),
     //Requests which expect responses 
     VOTE_REQ("VOTE_REQ"), //should include partcipant list 
     STATE_REQ("STATE_REQ"), //can include up list

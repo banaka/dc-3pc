@@ -21,6 +21,7 @@ public class CoordinatorImpl extends Process implements Coordinator {
     public void initTransaction() {
         logMsg(" START 3PC");
         sendVoteRequests();
+        getVotes();
         processVotes();
     }
 
@@ -30,8 +31,40 @@ public class CoordinatorImpl extends Process implements Coordinator {
     }
 
     @Override
-    public void handleSpecificCommands(MsgContent command, String[] msgFields) {
-        //To change body of implemented methods use File | Settings | File Templates.
+    public boolean handleSpecificCommands(MsgContent msgContent, String[] msgFields) {
+        boolean shouldContinue = true;
+        int fromProcId = Integer.parseInt(msgFields[MessageGenerator.processNo].trim());
+
+        switch (msgContent) {
+            case VoteYes:
+            case VoteNo:
+                votes.put(fromProcId, msgContent.content);
+                if(votes.size() >= (up.size()-1))
+                    shouldContinue = false;
+                break;
+            case TIMEOUT:
+                if(currentState == ProcessState.VoteReq)
+                    send_abort();
+                shouldContinue = false;
+                break;
+            default:
+                logMsg("Not expected ::"+msgContent.content);
+        }
+        return shouldContinue;
+    }
+
+    private void send_abort() {
+        logMsg("ABORT");
+        currentState = ProcessState.LoggedAbort;
+        for(int i : up)
+            if(this.votes.get(i).equals("VoteYes"))
+                sendMsg(MsgContent.ABORT, "", i);
+    }
+    private void send_commit() {
+        logMsg("COMMIT");
+        currentState = ProcessState.LoggedCommit;
+        for(int i : up)
+            sendMsg(MsgContent.COMMIT, "", i);
     }
 
     CoordinatorImpl(NetController netController, int procNo, ProcessState stateToDie, Boolean voteInput, String txData, int totalProcNo) {
@@ -44,15 +77,20 @@ public class CoordinatorImpl extends Process implements Coordinator {
     }
 
     public void sendVoteRequests() {
+        this.currentState = ProcessState.VoteReq;
         for (int i : up) {
             if(i != procNo)
                 sendMsg(MsgContent.VOTE_REQ, txCommand, i);
         }
     }
 
+    public void getVotes() {
+        startListening(timeout);
+    }
+
     public void processVotes() {
         /*Ideally the wait should be just untill we get messages from all the proceses or till timeout */
-        while (votes.size() < (up.size()-1)) {
+//        while (votes.size() < (up.size()-1)) {
 //            synchronized (this.netController.objectToWait) {
 //                try {
 //                    //thread to sleep so that we can get some messages 
@@ -62,19 +100,22 @@ public class CoordinatorImpl extends Process implements Coordinator {
 //                }
 //            }
 //            while(true){
-            String msg;
-            while ((msg = this.netController.getReceivedMsgMain()) == null)
-                sleeping_for(10);
-            logMsg("Received a message!!! - "+msg);
-            String[] msgFeilds = msg.split(MessageGenerator.MSG_FIELD_SEPARATOR);
-            int fromProcId = Integer.parseInt(msgFeilds[MessageGenerator.processNo].trim());
-            MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFeilds[MessageGenerator.msgContent]);
-            if (msgContent == MsgContent.VoteYes || msgContent == MsgContent.VoteNo) {
-                votes.put(fromProcId, msgContent.content);
-            }
-        }
+//            String msg;
+//            while ((msg = this.netController.getReceivedMsgMain()) == null)
+//                sleeping_for(10);
+//            logMsg("Received a message!!! - "+msg);
+//            String[] msgFeilds = msg.split(MessageGenerator.MSG_FIELD_SEPARATOR);
+//            int fromProcId = Integer.parseInt(msgFeilds[MessageGenerator.processNo].trim());
+//            MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFeilds[MessageGenerator.msgContent]);
+//            if (msgContent == MsgContent.VoteYes || msgContent == MsgContent.VoteNo) {
+//                votes.put(fromProcId, msgContent.content);
+//            }
+//        }
 
         //Votes Check...
+        if(votes.size() < (up.size()-1))
+            return;
+        currentState = ProcessState.VoteCounting;
         System.out.println(votes);
         boolean allSaidYes = true;
         if(this.vote == false)
@@ -85,14 +126,10 @@ public class CoordinatorImpl extends Process implements Coordinator {
         }
 
         if(allSaidYes){
-            logMsg("COMMIT");
-            for(int i : up)
-                sendMsg(MsgContent.COMMIT, "", i);
+            send_commit();
         }else{
-            logMsg("ABORT");
-            for(int i : up)
-                sendMsg(MsgContent.ABORT, "", i);
-        }
-        startListening();
+            send_abort();
+         }
     }
+
 }
