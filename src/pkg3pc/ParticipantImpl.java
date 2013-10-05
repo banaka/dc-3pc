@@ -39,6 +39,10 @@ public class ParticipantImpl extends Process implements Participant {
             case TIMEOUT:
                 switch(currentState) {
                     case Uncertain:
+                        //Run Coordinator election
+                        break;
+                    //Forever wait if Wait VoteReq state
+                    case WaitForVotReq:
                         break;
                     default:
                         System.out.println("Timed out ...relistening...");
