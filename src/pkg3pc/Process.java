@@ -34,6 +34,9 @@ abstract public class Process {
     ProcessBackground processBackground;
     boolean vote;
 
+    int totalMessageReceived;
+    int totalMessageToReceive;
+
     public enum playlistCommand {
         ADD(0),
         EDIT(1),
@@ -45,7 +48,7 @@ abstract public class Process {
         public int value() { return value; }
     }
 
-    Process(NetController netController, int procNo, ProcessState stateToDie, Boolean voteInput) {
+    Process(NetController netController, int procNo, ProcessState stateToDie, Boolean voteInput, int msgCount) {
         this.netController = netController;
         this.vote = voteInput;
         this.procNo = procNo;
@@ -55,6 +58,7 @@ abstract public class Process {
         viewNumber = 0;
         processBackground = new ProcessBackground(this);
         processBackground.start();
+        totalMessageToReceive = msgCount;
     }
 
 //    public void run() {
@@ -66,7 +70,18 @@ abstract public class Process {
 //            Logger.getLogger(Process.class.getName()).log(Level.SEVERE, null, ex);
 //        }
 //    }
+    void changeState(ProcessState ps){
+        if(ps == endState)
+            System.exit(0);
+        else
+            currentState = ps;
+    }
 
+    void updateMessagesReceived(){
+        totalMessageReceived++;
+        if(totalMessageToReceive != 0 && totalMessageReceived >= totalMessageToReceive)
+            System.exit(0);
+    }
     void processAddToPlayist(String name, String url) {
         logMsg("ADDDING item to playlist - "+name+" "+url+" :D ");
     }
@@ -146,7 +161,9 @@ abstract public class Process {
                 globalCounter += counter;
             String[] msgFields = msg.split(MessageGenerator.MSG_FIELD_SEPARATOR);
             logMsg("Received a message!!! - "+msg);
-//            int fromProcId = Integer.parseInt(msgFields[MessageGenerator.processNo].trim());
+            int fromProcId = Integer.parseInt(msgFields[MessageGenerator.processNo].trim());
+            if(fromProcId != procNo)
+                updateMessagesReceived();
             MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFields[MessageGenerator.msgContent]);
             boolean shouldContinue = true;
             switch (msgContent) {

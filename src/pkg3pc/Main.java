@@ -23,9 +23,9 @@ public class Main {
             vote = Boolean.parseBoolean(args[1]);
 
         if (pid == 0) {
-            p = new CoordinatorImpl(n, pid, null, vote, config.command, config.numProcesses);
+            p = new CoordinatorImpl(n, pid, null, vote, config.command, config.numProcesses, 0);
         } else {
-            p = new ParticipantImpl(n, pid, null, vote);
+            p = new ParticipantImpl(n, pid, null, vote, 0);
         }
 //        p.start();
         p.refreshState();

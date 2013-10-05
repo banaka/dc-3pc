@@ -67,8 +67,9 @@ public class CoordinatorImpl extends Process implements Coordinator {
             sendMsg(MsgContent.COMMIT, "", i);
     }
 
-    CoordinatorImpl(NetController netController, int procNo, ProcessState stateToDie, Boolean voteInput, String txData, int totalProcNo) {
-        super(netController, procNo, stateToDie, voteInput);
+    CoordinatorImpl(NetController netController, int procNo, ProcessState stateToDie, Boolean voteInput,
+                    String txData, int totalProcNo, int msgCount) {
+        super(netController, procNo, stateToDie, voteInput, msgCount);
         this.txCommand = txData;
         for (int i = 0; i < totalProcNo; i++) {
             this.up.add(i);

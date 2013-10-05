@@ -11,8 +11,8 @@ import ut.distcomp.framework.NetController;
  * @author bansal
  */
 public class ParticipantImpl extends Process implements Participant {
-    ParticipantImpl(NetController netController, int procNo, ProcessState stateToDie, Boolean voteInput){
-        super(netController, procNo, stateToDie, voteInput);        
+    ParticipantImpl(NetController netController, int procNo, ProcessState stateToDie, Boolean voteInput, int msgCount){
+        super(netController, procNo, stateToDie, voteInput, msgCount);
     }
 
     public void processStateRequest(){
