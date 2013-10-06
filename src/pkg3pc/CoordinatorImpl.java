@@ -119,8 +119,7 @@ public class CoordinatorImpl extends Process implements Coordinator {
     private String appendParticipants(String txCommand) {
         String appendedString = txCommand + MsgGen.MSG_FIELD_SEPARATOR;
         for (int i = 0; i < noOfProcesses; i++) {
-            if (i != procNo)
-                appendedString += (i + ",");
+            appendedString += (i + ",");
         }
         return appendedString;
     }
