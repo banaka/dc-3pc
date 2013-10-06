@@ -15,11 +15,15 @@ import java.util.logging.Level;
  */
 public class CoordinatorImpl extends Process implements Coordinator {
 
-    Map<Integer, String> votes = new HashMap<Integer, String>();
+    Map<Integer, String> replySet = new HashMap<Integer, String>();
+    int noOfProcesses;
 
     @Override
     public void initTransaction() {
         logger.info(LogMsgType.START3PC.txt);
+        for (int i = 0; i < noOfProcesses; i++) {
+            this.up.add(i);
+        }
         sendVoteRequests();
         getVotes();
         processVotes();
@@ -28,6 +32,9 @@ public class CoordinatorImpl extends Process implements Coordinator {
     @Override
     public void precommit() {
         logger.info(LogMsgType.PRECOMMIT.txt);
+        replySet.clear();
+        startListening(timeout);
+        processAcks();
     }
 
     @Override
@@ -38,13 +45,20 @@ public class CoordinatorImpl extends Process implements Coordinator {
         switch (msgContent) {
             case VoteYes:
             case VoteNo:
-                votes.put(fromProcId, msgContent.content);
-                if (votes.size() >= (up.size() - 1))
+                replySet.put(fromProcId, msgContent.content);
+                if (replySet.size() >= (noOfProcesses - 1))
+                    shouldContinue = false;
+                break;
+            case ACK:
+                replySet.put(fromProcId, msgContent.content);
+                if (replySet.size() >= (noOfProcesses - 1))
                     shouldContinue = false;
                 break;
             case TIMEOUT:
                 if (currentState == ProcessState.VoteReq)
                     send_abort();
+                if (currentState == ProcessState.Uncertain)
+                    processAcks();
                 shouldContinue = false;
                 break;
             default:
@@ -53,29 +67,33 @@ public class CoordinatorImpl extends Process implements Coordinator {
         return shouldContinue;
     }
 
-    private void send_abort() {
+    public void send_abort() {
         logger.info(LogMsgType.ABORT.txt);
         for (int i : up)
-            if (("VoteYes").equals(this.votes.get(i)))
+            if (("VoteYes").equals(this.replySet.get(i)))
                 sendMsg(MsgContent.ABORT, "", i);
         abort();
     }
 
-    private void send_commit() {
+    public void send_commit() {
         logger.info(LogMsgType.COMMIT.txt);
         for (int i : up)
             sendMsg(MsgContent.COMMIT, "", i);
         commit();
     }
 
+    public void send_precommit() {
+        logger.info(LogMsgType.PRECOMMIT.txt);
+        for (int i : up)
+            sendMsg(MsgContent.PRECOMMIT, "", i);
+        precommit();
+    }
+
     CoordinatorImpl(NetController netController, int procNo, ProcessState stateToDie, Boolean voteInput,
                     String txData, int totalProcNo, int msgCount) {
         super(netController, procNo, stateToDie, voteInput, msgCount);
         this.txCommand = txData;
-        for (int i = 0; i < totalProcNo; i++) {
-            this.up.add(i);
-        }
-
+        this.noOfProcesses = totalProcNo;
     }
 
     public void sendVoteRequests() {
@@ -90,25 +108,40 @@ public class CoordinatorImpl extends Process implements Coordinator {
         startListening(timeout);
     }
 
+    /**
+     * Ths Coordinator doesnt need to check if any of the process has actually sent ACK. IF all of them send ACK
+     * before timeout well and good else it will wait for timeout and snd COMMIT
+     */
+    public void processAcks() {
+        logger.log(Level.CONFIG, "Acks Reply Set " + replySet);
+        send_commit();
+        replySet.clear();
+    }
+
+
+    /**
+     * Control Comes here only when we have all the votes or Timeone has taken place
+     * We then Check if any of the vote if NO send abort
+     * else we send PRECOMMIT
+     */
     public void processVotes() {
-        //Votes Check...
-        if (votes.size() < (up.size() - 1))
-            return;
-        System.out.println(votes);
+        if (replySet.size() < (noOfProcesses - 1))
+            send_abort();
+        logger.log(Level.CONFIG, "Votes Reply Set " + replySet);
         boolean allSaidYes = true;
         if (this.vote == false)
             allSaidYes = false;
-        for (String vote : votes.values()) {
+        for (String vote : replySet.values()) {
             if ("VoteNo".equals(vote))
                 allSaidYes = false;
         }
 
         if (allSaidYes) {
-            send_commit();
+            send_precommit();
         } else {
             send_abort();
         }
-        votes.clear();
+        replySet.clear();
     }
 
 }

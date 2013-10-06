@@ -6,7 +6,6 @@ package pkg3pc;
 
 import ut.distcomp.framework.NetController;
 
-import java.io.*;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Set;
