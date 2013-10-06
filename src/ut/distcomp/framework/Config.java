@@ -38,8 +38,8 @@ public class Config {
         aliveTimeout = 2500;
         if(prop.getProperty("delay") != null) {
             delay = Helper.loadInt(prop, "delay");
-            timeout = 4*delay;
-            aliveTimeout = 2*delay + 100;
+            timeout = 5*delay;
+            aliveTimeout = 2*delay + 500;
         }
         if(prop.getProperty("timeout") != null)
             timeout = Helper.loadInt(prop, "timeout");

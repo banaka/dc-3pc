@@ -38,6 +38,7 @@ abstract public class Process {
     public int aliveTimeout;
     private final Set<MsgContent> backgroundSet = new HashSet<MsgContent>(Arrays.asList(MsgContent.IAMALIVE, MsgContent.CHECKALIVE));
     boolean recovered;
+    public boolean interimCoodrinator = false;
 
     public enum playlistCommand {
 
@@ -288,6 +289,7 @@ abstract public class Process {
 
     public void initTransaction() {
         logger.info(LogMsgType.NEWTX.txt);
+        interimCoodrinator = false;
         currentState = ProcessState.WaitForVotReq;
         startListening(0);
     }
@@ -339,7 +341,10 @@ abstract public class Process {
             }
             MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFields[MsgGen.msgContent]);
             boolean shouldContinue = true;
-            logger.log(Level.CONFIG, msgContent.content + ";From :" + fromProcId + ";current state: " + currentState);
+            String margin = "";
+            if(isBackground(msgContent.content))
+                margin = "...............................................................";
+            logger.log(Level.CONFIG, margin+msgContent.content+";From :"+fromProcId+";current state: "+currentState);
 
             switch (msgContent) {
                 case COMMIT:

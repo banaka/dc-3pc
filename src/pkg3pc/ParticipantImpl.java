@@ -19,7 +19,6 @@ public class ParticipantImpl extends Process implements Participant {
     }
 
     public int coordinator;
-    public boolean interimCoodrinator = false;
     public boolean isWaitingForAck = false;
     Map<Integer, MsgContent> interimStates;
     Set<Integer> interimAcks;
