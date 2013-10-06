@@ -31,15 +31,12 @@ public class NetController {
     private final List<IncomingSock> inSockets;
     private final OutgoingSock[] outSockets;
     private final ListenServer listener;
-//    public Object objectToWait;
 
-    public NetController(Config config, List<String> mainMsgsList) {
+    public NetController(Config config) {
         this.config = config;
         inSockets = Collections.synchronizedList(new ArrayList<IncomingSock>());
-//        listener = new ListenServer(config, inSockets, mainMsgsList, this);
-        listener = new ListenServer(config, inSockets, mainMsgsList);
+        listener = new ListenServer(config, inSockets);
         outSockets = new OutgoingSock[config.numProcesses];
-//        objectToWait = new Object();
         listener.start();
     }
 
@@ -102,53 +99,6 @@ public class NetController {
             return false;
         }
         return true;
-    }
-
-    /**
-     * Return a list of msgs received on established incoming sockets
-     *
-     * @return list of messages sorted by socket, in FIFO order. *not sorted by
-     * time received*
-     */
-    public synchronized List<String> getReceivedMsgs() {
-        List<String> objs = new ArrayList<String>();
-        synchronized (inSockets) {
-            ListIterator<IncomingSock> iter = inSockets.listIterator();
-            while (iter.hasNext()) {
-                IncomingSock curSock = iter.next();
-                try {
-                    objs.add(curSock.getMsgsBack());
-                } catch (Exception e) {
-                    config.logger.log(Level.INFO,
-                            "Server " + config.procNum + " received bad data on a socket", e);
-                    curSock.cleanShutdown();
-                    iter.remove();
-                }
-            }
-        }
-
-        return objs;
-    }
-
-    public synchronized String getReceivedMsgBack() {
-        String msg = null;
-        synchronized (inSockets) {
-            ListIterator<IncomingSock> iter = inSockets.listIterator();
-            while (iter.hasNext()) {
-                IncomingSock curSock = iter.next();
-                try {
-                    if ((msg = curSock.getMsgsBack()) != null)
-                        break;
-                } catch (Exception e) {
-                    config.logger.log(Level.INFO,
-                            "Server " + config.procNum + " received bad data on a socket", e);
-                    curSock.cleanShutdown();
-                    iter.remove();
-                }
-            }
-        }
-
-        return msg;
     }
 
     public synchronized String getReceivedMsgMain() {

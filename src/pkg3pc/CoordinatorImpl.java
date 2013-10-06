@@ -8,11 +8,14 @@ import ut.distcomp.framework.Config;
 import ut.distcomp.framework.NetController;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Level;
 
 /**
+ * Throughout this class we have to make use of the noOfProcesses and not the up set because we cannot iterate over
+ * the up set when it is getting updated.. and it makes sense to ake use of the noOfProcesses because the processes are
+ * anyways not when Decision has been made..
+ *
  * @author bansal
  */
 public class CoordinatorImpl extends Process implements Coordinator {
@@ -28,6 +31,7 @@ public class CoordinatorImpl extends Process implements Coordinator {
 
     @Override
     public void initTransaction() {
+        currentState = ProcessState.VoteReq;
         logger.info(LogMsgType.START3PC.txt);
         for (int i = 0; i < noOfProcesses; i++) {
             this.up.add(i);
@@ -77,31 +81,38 @@ public class CoordinatorImpl extends Process implements Coordinator {
     }
 
     public void send_abort() {
-        logger.info(LogMsgType.ABORT.txt);
+        logger.info(LogMsgType.ABORT.txt + " Before sending TO ALL");
         for (int i : up)
             if (("VoteYes").equals(this.replySet.get(i)))
                 sendMsg(MsgContent.ABORT, "", i);
         abort();
     }
 
+    /* TODO Apply synchronised to make sure we can iterate and make changes to the set at same time.*/
+
     public void send_commit() {
         logger.info(LogMsgType.COMMIT.txt);
-        for (int i : up)
-            sendMsg(MsgContent.COMMIT, "", i);
+        for (int i = 0; i < noOfProcesses; i++) {
+            if (i != procNo)
+                sendMsg(MsgContent.COMMIT, "", i);
+        }
         commit();
     }
 
     public void send_precommit() {
         logger.info(LogMsgType.PRECOMMIT.txt);
-        for (int i : up)
-            sendMsg(MsgContent.PRECOMMIT, "", i);
+        for (int i = 0; i < noOfProcesses; i++) {
+            if (i != procNo)
+                sendMsg(MsgContent.PRECOMMIT, "", i);
+        }
         precommitPhase();
     }
 
     public void sendVoteRequests() {
         this.currentState = ProcessState.VoteReq;
         String txAppendNodes = appendParticipants(txCommand);
-        for (int i : up) {
+        //Need to do this because the up set gets over written even before these messages are sent out
+        for (int i = 0; i < noOfProcesses; i++) {
             if (i != procNo)
                 sendMsg(MsgContent.VOTE_REQ, txAppendNodes, i);
         }
@@ -109,9 +120,9 @@ public class CoordinatorImpl extends Process implements Coordinator {
 
     private String appendParticipants(String txCommand) {
         String appendedString = txCommand + MsgGen.MSG_FIELD_SEPARATOR;
-        Iterator it = up.iterator();
-        while(it.hasNext()){
-            appendedString += (it.next() + ",");
+        for (int i = 0; i < noOfProcesses; i++) {
+            if (i != procNo)
+                appendedString += (i + ",");
         }
         return appendedString;
     }
@@ -132,7 +143,7 @@ public class CoordinatorImpl extends Process implements Coordinator {
 
 
     /**
-     * Control Comes here only when we have all the votes or Timeone has taken place
+     * Control Comes here only when we have all the votes or Timeout has taken place
      * We then Check if any of the vote if NO send abort
      * else we send PRECOMMIT
      */

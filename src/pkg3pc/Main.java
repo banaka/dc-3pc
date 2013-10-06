@@ -9,7 +9,6 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- *
  * @author bansal
  */
 public class Main {
@@ -18,9 +17,9 @@ public class Main {
         Process p;
         Boolean vote = true;
         int pid = Integer.parseInt(args[0]);
-        if(config.clean != null)
+        if (config.clean != null)
             Helper.clearLogs("Log" + pid + ".log");
-        if(args.length > 1)
+        if (args.length > 1)
             vote = Boolean.parseBoolean(args[1]);
 
         if (pid == 0) {
@@ -28,7 +27,6 @@ public class Main {
         } else {
             p = new ParticipantImpl(n, pid, vote, 0, config);
         }
-//        p.start();
         p.refreshState();
     }
 
@@ -37,42 +35,14 @@ public class Main {
      */
     public static void main(String[] args) throws IOException, InterruptedException {
         int pid;
-        if(args.length > 0)
-                pid = Integer.parseInt(args[0]);
+        if (args.length > 0)
+            pid = Integer.parseInt(args[0]);
         else
             throw new IOException("Enter PID as the first parameter!");
         String filename = "config.properties";
 
-//        List<NetController> netControllerList = new ArrayList<NetController>();
-
-//        Properties prop = new Properties();
-//        prop.load(new FileInputStream(filename));
-
-        List<String> msgsMainList = new ArrayList<String>(
-                Arrays.asList(MsgContent.ABORT.content,
-                        MsgContent.COMMIT.content,
-                        MsgContent.VOTE_REQ.content,
-                        MsgContent.PRECOMMIT.content,
-                        MsgContent.VoteYes.content,
-                        MsgContent.VoteNo.content));
-
-//        int N = Helper.loadInt(prop, "NumProcesses");
-
-//        for (int i = 0; i < N; i++) {
-//            try {
-                Config config = new Config(filename, pid);
-                NetController netController = new NetController(config, msgsMainList);
-                initiateProcess(netController, config, args);
-//                netControllerList.add(netController);
-//             } catch (Exception e) {
-//                System.out.println("Trying to run config " + e);
-//            }
-//        }
-
-        //Shutdown of all the processes after the Main execution Closes...
-//        for (int i = 0; i < N; i++) {
-//            NetController netController = netControllerList.get(i);
-//            netController.shutdown();
-//        }
+        Config config = new Config(filename, pid);
+        NetController netController = new NetController(config);
+        initiateProcess(netController, config, args);
     }
 }

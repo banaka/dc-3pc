@@ -83,6 +83,7 @@ abstract public class Process {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
         //When starting the process initiate its playlist based of the values present in the playlist instructions
         recoverPlayList();
 
@@ -131,11 +132,11 @@ abstract public class Process {
 
     public void updateUpSet(int procId) {
         up.add(procId);
+        logger.log(Level.WARNING,up.toString());
     }
 
     public void refreshState() {
         while (true) {
-            //ToDo: Read my DtLog and check whether init transaction or recover
             isRecoveryNeeded();
             /*ToDo: Clear my queue both back and main */
             // If init transaction //
@@ -204,23 +205,6 @@ abstract public class Process {
                     }
                 }
             }
-
-//            if (fileContents.contains(LogMsgType.START3PC.txt)) {
-//                //TODO should be done in Coordinator code base
-//            } else {
-//                if (fileContents.contains(LogMsgType.ABORT.txt)) {
-//                    abort();
-//                    return;
-//                } else if (fileContents.contains(LogMsgType.PRECOMMIT.txt)) {
-//                    //TODO Check with up set people
-//                } else if (fileContents.contains(LogMsgType.COMMIT.txt)) {
-//                    String txcmd = fileContents.substring(fileContents.lastIndexOf(LogMsgType.COMMIT.txt)).split(System.getProperty("line.separator"))[2];
-//                    this.txCommand = txcmd.substring(txCommand.lastIndexOf(":"));
-//                    commit();
-//                    return;
-//
-//                }
-//            }
 
         } catch (IOException e) {
             logger.log(Level.FINE, "Unable to read the Log File. Recovery is not needed " + e);
