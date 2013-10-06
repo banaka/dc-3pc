@@ -85,6 +85,7 @@ abstract public class Process {
 
     private void setLogger() {
         logger = Logger.getLogger("MyLog");
+        logger.setUseParentHandlers(false);
         logger.setLevel(Level.FINER);
         Handler consoleHandler = null;
         for (Handler handler : logger.getHandlers()) {
@@ -98,7 +99,7 @@ abstract public class Process {
             consoleHandler = new ConsoleHandler();
             logger.addHandler(consoleHandler);
         }
-        consoleHandler.setLevel(Level.FINER);
+        consoleHandler.setLevel(Level.CONFIG);
     }
 
     void updateMessagesReceived() {
