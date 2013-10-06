@@ -7,6 +7,7 @@ package pkg3pc;
 import ut.distcomp.framework.NetController;
 
 import java.util.Collections;
+import java.util.logging.Level;
 
  /**
  *
@@ -23,7 +24,7 @@ public class ParticipantImpl extends Process implements Participant {
     
     @Override
     public void precommit(){
-        logMsg("PRECOMMIT");
+        logger.info(LogMsgType.PRECOMMIT.txt);
     }
 
     @Override
@@ -34,7 +35,7 @@ public class ParticipantImpl extends Process implements Participant {
                 sendStateRequestRes(fromProcId);
                 break;
             case VOTE_REQ:
-                logMsg("RECIEVED VOTE REQ");
+                logger.info(LogMsgType.REC_VOTE_REQ.txt);
                 try{
                     coordinator = fromProcId;
                     return processVoteRequest(msgFields[MessageGenerator.msgData], fromProcId);
@@ -59,7 +60,7 @@ public class ParticipantImpl extends Process implements Participant {
                 }
                 break;
             default:
-                logMsg("Not expected ::"+msgContent.content);
+                logger.log(Level.WARNING,"Not expected ::"+msgContent.content);
         }
         return true;
     }
@@ -67,7 +68,7 @@ public class ParticipantImpl extends Process implements Participant {
     public boolean processVoteRequest(String command, int sendTo) {
         txCommand = command;
         if (vote) {
-            logMsg("SENT VOTE - "+vote);
+            logger.info(LogMsgType.VOTEYES.txt);
             sendMsg(MsgContent.VoteYes, command, sendTo);
             currentState = ProcessState.Uncertain;
         } else {

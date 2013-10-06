@@ -4,12 +4,16 @@
  */
 package pkg3pc;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.NoSuchFileException;
 import ut.distcomp.framework.NetController;
 
-import java.io.*;
-import java.nio.file.DirectoryNotEmptyException;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Set;
@@ -19,7 +23,6 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
 /**
- *
  * @author bansal
  */
 abstract public class Process {
@@ -76,13 +79,12 @@ abstract public class Process {
         totalMessageToReceive = msgCount;
 
         logFileName = "Log" + procNo + ".log";
-        playListInstructions = "PlayListinstruction" + procNo + ".txt";
+        playListInstructions = "PlayListInstruction" + procNo + ".txt";
         logger = Logger.getLogger("MyLog");
         logger.setLevel(Level.CONFIG);
-        FileHandler fh;
 
         try {
-            fh = new FileHandler(logFileName, true);
+            FileHandler fh = new FileHandler(logFileName, true);
             logger.addHandler(fh);
             SimpleFormatter formatter = new SimpleFormatter();
             fh.setFormatter(formatter);
@@ -92,8 +94,9 @@ abstract public class Process {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        //When starting the process initiate its playlist based of the values present in the playlist instructions
+        recoverPlayList();
 
-        up.add(1-procNo);
     }
 
     void changeState(ProcessState ps) {
@@ -111,8 +114,8 @@ abstract public class Process {
         }
     }
 
-    void processAddToPlayist(String name, String url) {
-        logger.log(Level.CONFIG, "ADDDING item to playlist - " + name + " " + url + " :D ");
+    void processAddToPlaylist(String name, String url) {
+        logger.log(Level.CONFIG, "Adding item to playlist - " + name + " " + url + " :D ");
         playlist.put(name, url);
     }
 
@@ -133,12 +136,6 @@ abstract public class Process {
         logger.log(Level.CONFIG, "Sent msg " + outputMsg + " to " + sendTo);
     }
 
-    public void logMsg(String logMsg) {
-        //at any final state delete the DT log and start a new one 
-        logger.info(logMsg);
-        System.out.println("Log of proc " + procNo + " " + logMsg);
-    }
-
     public void sendStateRequestRes(int procId) {
         sendMsg(Enum.valueOf(MsgContent.class, currentState.msgState),"",procId);
     }
@@ -149,8 +146,8 @@ abstract public class Process {
 
     public void refreshState() {
         while (true) {
-            recoverPlayList();
             //ToDo: Read my DtLog and check whether init transaction or recover
+            isRecoveryNeeded();
             /*ToDo: Clear my queue both back and main */
             // If init transaction //
             initTransaction();
@@ -168,7 +165,7 @@ abstract public class Process {
                 String[] cmd = line.split(TX_MSG_SEPARATOR);
                 switch (playlistCommand.valueOf(cmd[0])) {
                     case ADD:
-                        processAddToPlayist(cmd[1], cmd[2]);
+                        processAddToPlaylist(cmd[1], cmd[2]);
                         break;
                     case EDIT:
                         processEditPlaylist(cmd[1], cmd[2], cmd[3], cmd[4]);
@@ -185,26 +182,51 @@ abstract public class Process {
         }
     }
 
-    public void isrecoveryNeeded() throws FileNotFoundException, IOException {
-        StringBuilder logEntryBuffer = null;
-        FileReader file = new FileReader(logFileName);
-        BufferedReader reader = new BufferedReader(file);
-        String line = null;
+    public void isRecoveryNeeded() {
+        try {
+            FileReader file = new FileReader(logFileName);
+            BufferedReader reader = new BufferedReader(file);
+            String line = null;
 
-        while ((line = reader.readLine()) != null) {
-            line = line.trim();
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.contains("INFO")) {
+                    String msg = line.substring(line.lastIndexOf(":"));
+                    LogMsgType logMsg = Enum.valueOf(LogMsgType.class, msg);
+                    switch (logMsg) {
+                        case COMMIT:
+                            currentState = ProcessState.Commited;
+                            //TODO need to set the command
+                            commit();
+                            break;
+                        case PRECOMMIT:
+                            currentState = ProcessState.Commitable;
+                            break;
+                        case ABORT:
+                            break;
+                        case NEWTX:
+                            break;
+                        case REC_VOTE_REQ:
+                            break;
+                        case VOTEYES:
+                            break;
+                        case START3PC:
+                            break;
 
+                    }
 
+                }
+
+            }
+        } catch (IOException e) {
+            logger.log(Level.FINE, "Unable to read the Log File. Please Check!!" + e);
         }
 
     }
 
     public void initTransaction() {
-        logMsg("NEW TX - WAITING FOR VOTE REQ");
+        logger.info(LogMsgType.NEWTX.txt);
         currentState = ProcessState.WaitForVotReq;
-        // synchronized (this.netController.objectToWait) {
-        //this.netController.objectToWait.wait(timeout);
-        //}
         startListening(0);
     }
 
@@ -269,10 +291,10 @@ abstract public class Process {
     }
 
     public void abort() {
-        logger.log(Level.INFO, "ABORT :(");
+        logger.log(Level.INFO, LogMsgType.ABORT.txt);
         currentState = ProcessState.Aborted;
-        //ToDo: Prepare for new transaction
-        //TODO delete the Log file and create a new one         
+
+        clearLogs();
     }
 
     abstract public void precommit();
@@ -280,12 +302,13 @@ abstract public class Process {
     abstract public boolean handleSpecificCommands(MsgContent command, String[] msgFields);
 
     public void commit() {
-        logger.log(Level.INFO, "COMMIT");
+        logger.log(Level.INFO, LogMsgType.COMMIT.txt);
+
         currentState = ProcessState.Commited;
         String[] cmd = txCommand.split(TX_MSG_SEPARATOR);
         switch (playlistCommand.valueOf(cmd[0])) {
             case ADD:
-                processAddToPlayist(cmd[1], cmd[2]);
+                processAddToPlaylist(cmd[1], cmd[2]);
                 break;
             case EDIT:
                 processEditPlaylist(cmd[1], cmd[2], cmd[3], cmd[4]);
@@ -306,20 +329,18 @@ abstract public class Process {
         } catch (IOException e) {
             logger.log(Level.FINE, "Unable to write into the PlaylistInstructions File. Please Check!!" + e);
         }
+        clearLogs();
 
-        //TODO delete the Log file and create a new one  
+    }
+
+    public void clearLogs() {
         try {
-            File logFile = new File(logFileName);
-            Files.delete(logFile.toPath());
-        } catch (NoSuchFileException x) {
-            logger.log(Level.SEVERE, "%s: no such" + " file or directory%n", logFileName);
-        } catch (DirectoryNotEmptyException x) {
-            logger.log(Level.SEVERE, "%s not empty%n", logFileName);
+            FileWriter fileWriter = new FileWriter(logFileName);
+            fileWriter.write("");
+            fileWriter.close();
         } catch (IOException x) {
-            // File permission problems are caught here.
-            logger.log(Level.SEVERE, x.toString());
+            logger.log(Level.SEVERE, "Error while deleting the File " + logFileName + " " + x.getStackTrace());
         }
-
     }
 }
 
@@ -328,5 +349,6 @@ class GlobalCounter {
     GlobalCounter(int value) {
         this.value = value;
     }
+
     public int value;
 }
