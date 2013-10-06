@@ -55,6 +55,7 @@ public class CoordinatorImpl extends Process implements Coordinator {
                     shouldContinue = false;
                 break;
             case TIMEOUT:
+                logger.log(Level.CONFIG, "TIMEOUT");
                 if (currentState == ProcessState.VoteReq)
                     send_abort();
                 if (currentState == ProcessState.Uncertain)
@@ -125,21 +126,24 @@ public class CoordinatorImpl extends Process implements Coordinator {
      * else we send PRECOMMIT
      */
     public void processVotes() {
-        if (replySet.size() < (noOfProcesses - 1))
-            send_abort();
         logger.log(Level.CONFIG, "Votes Reply Set " + replySet);
-        boolean allSaidYes = true;
-        if (this.vote == false)
-            allSaidYes = false;
-        for (String vote : replySet.values()) {
-            if ("VoteNo".equals(vote))
-                allSaidYes = false;
-        }
-
-        if (allSaidYes) {
-            send_precommit();
-        } else {
+        if (replySet.size() < (noOfProcesses - 1)) {
             send_abort();
+
+        } else {
+            boolean allSaidYes = true;
+            if (this.vote == false)
+                allSaidYes = false;
+            for (String vote : replySet.values()) {
+                if ("VoteNo".equals(vote))
+                    allSaidYes = false;
+            }
+
+            if (allSaidYes) {
+                send_precommit();
+            } else {
+                send_abort();
+            }
         }
         replySet.clear();
     }
