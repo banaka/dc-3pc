@@ -31,7 +31,7 @@ public class ParticipantImpl extends Process implements Participant {
 
     @Override
     public boolean handleSpecificCommands(MsgContent msgContent, String[] msgFields) {
-        int fromProcId = Integer.parseInt(msgFields[MessageGenerator.processNo].trim());
+        int fromProcId = Integer.parseInt(msgFields[MsgGen.processNo].trim());
         switch (msgContent) {
             case UNCERTAIN:
             case COMMITABLE:
@@ -49,7 +49,10 @@ public class ParticipantImpl extends Process implements Participant {
                 logger.info(LogMsgType.REC_VOTE_REQ.txt);
                 try{
                     coordinator = fromProcId;
-                    return processVoteRequest(msgFields[MessageGenerator.msgData], fromProcId);
+                    String[] ups = msgFields[MsgGen.ups].split(",");
+                    for(String s : ups)
+                        up.add(Integer.parseInt(s));
+                    return processVoteRequest(msgFields[MsgGen.msgData], fromProcId);
                 } catch (ArrayIndexOutOfBoundsException e) {
                     System.out.println("Please Send your transaction command with Vote Req!!");
                 }

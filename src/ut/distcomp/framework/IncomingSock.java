@@ -6,7 +6,7 @@
  */
 package ut.distcomp.framework;
 
-import pkg3pc.MessageGenerator;
+import pkg3pc.MsgGen;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -81,10 +81,10 @@ public class IncomingSock extends Thread {
                     while ((curIdx = dataStr.indexOf(MSG_SEP, curPtr)) != -1) {
                         String tmp = dataStr.substring(curPtr, curIdx);
 
-                        String[] arr = tmp.split(MessageGenerator.MSG_FIELD_SEPARATOR);
+                        String[] arr = tmp.split(MsgGen.MSG_FIELD_SEPARATOR);
 //                        We need to syncronize the blocks where the notify and wait functions have been called
 //                        synchronized (this.netController.objectToWait) {
-//                            if (msgsMainList.contains(arr[MessageGenerator.msgContent])) {
+//                            if (msgsMainList.contains(arr[MsgGen.msgContent])) {
                                 queueMain.offer(tmp);
 //                                this.netController.objectToWait.notify();
 //                            } else {

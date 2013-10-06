@@ -40,11 +40,11 @@ public class ProcessBackground extends Thread {
 //        GlobalCounter globalCounter = new GlobalCounter(0);
 //        while (globalTimeout == 0 || globalCounter.value < globalTimeout) {
 //            String msg = waitTillTimeoutForMessage(globalCounter, globalTimeout);
-//            String[] msgFields = msg.split(MessageGenerator.MSG_FIELD_SEPARATOR);
+//            String[] msgFields = msg.split(MsgGen.MSG_FIELD_SEPARATOR);
 //            p.logger.log(Level.CONFIG, "Received a message!!! - " + msg);
-//            int fromProcId = Integer.parseInt(msgFields[MessageGenerator.processNo].trim());
+//            int fromProcId = Integer.parseInt(msgFields[MsgGen.processNo].trim());
 //
-//            MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFields[MessageGenerator.msgContent]);
+//            MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFields[MsgGen.msgContent]);
 //            boolean shouldContinue = true;
 //            switch (msgContent) {
 //                case ABORT:

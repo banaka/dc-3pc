@@ -7,6 +7,7 @@ package pkg3pc;
 import ut.distcomp.framework.NetController;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -40,7 +41,7 @@ public class CoordinatorImpl extends Process implements Coordinator {
     @Override
     public boolean handleSpecificCommands(MsgContent msgContent, String[] msgFields) {
         boolean shouldContinue = true;
-        int fromProcId = Integer.parseInt(msgFields[MessageGenerator.processNo].trim());
+        int fromProcId = Integer.parseInt(msgFields[MsgGen.processNo].trim());
 
         switch (msgContent) {
             case VoteYes:
@@ -99,10 +100,20 @@ public class CoordinatorImpl extends Process implements Coordinator {
 
     public void sendVoteRequests() {
         this.currentState = ProcessState.VoteReq;
+        String txAppendNodes = appendParticipants(txCommand);
         for (int i : up) {
             if (i != procNo)
-                sendMsg(MsgContent.VOTE_REQ, txCommand, i);
+                sendMsg(MsgContent.VOTE_REQ, txAppendNodes, i);
         }
+    }
+
+    private String appendParticipants(String txCommand) {
+        String appendedString = txCommand + MsgGen.MSG_FIELD_SEPARATOR;
+        Iterator it = up.iterator();
+        while(it.hasNext()){
+            appendedString += (it.next() + ",");
+        }
+        return appendedString;
     }
 
     public void getVotes() {

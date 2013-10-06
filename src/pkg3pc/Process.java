@@ -124,7 +124,7 @@ abstract public class Process {
     }
 
     public void sendMsg(MsgContent msgCont, String data, int sendTo) {
-        String outputMsg = MessageGenerator.genMsg(msgCont, data, procNo);
+        String outputMsg = MsgGen.genMsg(msgCont, data, procNo);
         logger.log(Level.CONFIG, "Sent msg " + outputMsg + " to " + sendTo);
         this.netController.sendMsg(sendTo, outputMsg);
     }
@@ -170,6 +170,11 @@ abstract public class Process {
             }
         } catch (FileNotFoundException e) {
             logger.log(Level.WARNING, "Playlist Doesnt seem to have been created yet!!" + e);
+            try {
+                new FileWriter(playListInstructions);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
         } catch (IOException e) {
             logger.log(Level.WARNING, "PlaylistInstructions File seems to have some issue Please Check!!" + e);
         }
@@ -204,6 +209,13 @@ abstract public class Process {
                 }
             }
 
+        } catch (FileNotFoundException e) {
+            logger.log(Level.WARNING, "Logfile doesnt seem to have been created yet!!" + e);
+            try {
+                new FileWriter(logFileName);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
         } catch (IOException e) {
             logger.log(Level.FINE, "Unable to read the Log File. Recovery is not needed " + e);
             return;
@@ -245,13 +257,13 @@ abstract public class Process {
         GlobalCounter globalCounter = new GlobalCounter(0);
         while (globalTimeout == 0 || globalCounter.value < globalTimeout) {
             String msg = waitTillTimeoutForMessage(globalCounter, globalTimeout);
-            String[] msgFields = msg.split(MessageGenerator.MSG_FIELD_SEPARATOR);
+            String[] msgFields = msg.split(MsgGen.MSG_FIELD_SEPARATOR);
             logger.log(Level.CONFIG, "Received a message!!! - " + msg);
-            int fromProcId = Integer.parseInt(msgFields[MessageGenerator.processNo].trim());
+            int fromProcId = Integer.parseInt(msgFields[MsgGen.processNo].trim());
             if (fromProcId != procNo) {
                 updateMessagesReceived();
             }
-            MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFields[MessageGenerator.msgContent]);
+            MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFields[MsgGen.msgContent]);
             boolean shouldContinue = true;
             switch (msgContent) {
                 case COMMIT:
