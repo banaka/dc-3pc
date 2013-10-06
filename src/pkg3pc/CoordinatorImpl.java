@@ -37,9 +37,9 @@ public class CoordinatorImpl extends Process implements Coordinator {
         processVotes();
     }
 
-    @Override
-    public void precommit() {
+    public void precommitPhase() {
         logger.info(LogMsgType.PRECOMMIT.txt);
+        precommit();
         replySet.clear();
         startListening(timeout);
         processAcks();
@@ -95,7 +95,7 @@ public class CoordinatorImpl extends Process implements Coordinator {
         logger.info(LogMsgType.PRECOMMIT.txt);
         for (int i : up)
             sendMsg(MsgContent.PRECOMMIT, "", i);
-        precommit();
+        precommitPhase();
     }
 
     public void sendVoteRequests() {

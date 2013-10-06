@@ -8,9 +8,7 @@ import ut.distcomp.framework.Config;
 import ut.distcomp.framework.NetController;
 
 import java.io.*;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -183,37 +181,47 @@ abstract public class Process {
             FileReader file = new FileReader(logFileName);
             BufferedReader reader = new BufferedReader(file);
             String line = null;
-            StringBuilder logFile = new StringBuilder();
+            List<String> logFile = new ArrayList<String>();
             while ((line = reader.readLine()) != null) {
-                logFile = logFile.append(line).append(System.getProperty("line.separator"));
+                logFile.add(line);
             }
-            //Create a arraylist and read form end
+            //TODO Create a arraylist and read form end
 
-            String fileContents = logFile.toString();
-            if (fileContents.contains(LogMsgType.START3PC.txt)) {
-                //TODO should be done in Coordinator code base
-            } else {
-                if (fileContents.contains(LogMsgType.ABORT.txt)) {
-                    abort();
-                    return;
-                } else if (fileContents.contains(LogMsgType.PRECOMMIT.txt)) {
-                    //TODO Check with up set people
-                } else if (fileContents.contains(LogMsgType.COMMIT.txt)) {
-                    String txcmd = fileContents.substring(fileContents.lastIndexOf(LogMsgType.COMMIT.txt)).split(System.getProperty("line.separator"))[2];
-                    this.txCommand = txcmd.substring(txCommand.lastIndexOf(":"));
-                    commit();
-                    return;
+            for (int i = logFile.size() - 1; i >= 0; i--) {
+                if (logFile.get(i).contains("INFO:")) {
+                    String matcher = logFile.get(i);
+                    if (matcher.contains(LogMsgType.ABORT.txt)) {
+                        abort();
+                        return;
+                    } else if (matcher.contains(LogMsgType.PRECOMMIT.txt)) {
+                        //TODO Check with up set people
+                    } else if (matcher.contains(LogMsgType.COMMIT.txt)) {
+                        String txcmd = logFile.get(i + 2);
+                        this.txCommand = txcmd.substring(txCommand.lastIndexOf(":"));
+                        commit();
+                        return;
 
+                    }
                 }
             }
 
-        } catch (FileNotFoundException e) {
-            logger.log(Level.WARNING, "Logfile doesnt seem to have been created yet!!" + e);
-            try {
-                new FileWriter(logFileName);
-            } catch (IOException e1) {
-                e1.printStackTrace();
-            }
+//            if (fileContents.contains(LogMsgType.START3PC.txt)) {
+//                //TODO should be done in Coordinator code base
+//            } else {
+//                if (fileContents.contains(LogMsgType.ABORT.txt)) {
+//                    abort();
+//                    return;
+//                } else if (fileContents.contains(LogMsgType.PRECOMMIT.txt)) {
+//                    //TODO Check with up set people
+//                } else if (fileContents.contains(LogMsgType.COMMIT.txt)) {
+//                    String txcmd = fileContents.substring(fileContents.lastIndexOf(LogMsgType.COMMIT.txt)).split(System.getProperty("line.separator"))[2];
+//                    this.txCommand = txcmd.substring(txCommand.lastIndexOf(":"));
+//                    commit();
+//                    return;
+//
+//                }
+//            }
+
         } catch (IOException e) {
             logger.log(Level.FINE, "Unable to read the Log File. Recovery is not needed " + e);
             return;
@@ -266,6 +274,7 @@ abstract public class Process {
             switch (msgContent) {
                 case COMMIT:
                     commit();
+                    shouldContinue = false;
                     break;
                 case ABORT:
                     abort();
@@ -293,7 +302,10 @@ abstract public class Process {
         Helper.clearLogs(logFileName);
     }
 
-    abstract public void precommit();
+    public void precommit() {
+        logger.log(Level.INFO, LogMsgType.PRECOMMIT.txt);
+        currentState = ProcessState.Commitable;
+    }
 
     abstract public boolean handleSpecificCommands(MsgContent command, String[] msgFields);
 
