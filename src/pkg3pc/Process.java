@@ -145,11 +145,11 @@ abstract public class Process {
     public void sendMsg(MsgContent msgCont, String data, int sendTo) {
         String outputMsg = MsgGen.genMsg(msgCont, data, procNo);
         String margin = "";
-        if(isBackground(outputMsg))
+        if (isBackground(outputMsg))
             margin = "...............................................................";
-        logger.log(Level.CONFIG, margin+"Sent: " + outputMsg + " to " + sendTo);
+        logger.log(Level.CONFIG, margin + "Sent: " + outputMsg + " to " + sendTo);
         int delay = config.delay;
-        if(isBackground(outputMsg))
+        if (isBackground(outputMsg))
             delay = 0;
         this.netController.sendMsg(sendTo, outputMsg, delay);
     }
@@ -228,7 +228,7 @@ abstract public class Process {
                     if (!deriveredUpset && matcher.contains((LogMsgType.UPSET.txt))) {
                         getUpset(matcher);
                         deriveredUpset = true;
-
+                        logger.log(Level.INFO, recoverUP.toString());
                         if (notDecided) {
                             System.out.println("GOT up and need to decide ");
                             break;
@@ -243,6 +243,7 @@ abstract public class Process {
                     } else if (matcher.contains(LogMsgType.PRECOMMIT.txt)) {
                         currentState = ProcessState.Commitable;
                         notDecided = true;
+                        txCommand=matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[1];
                         if (deriveredUpset) {
                             System.out.println("Know need to decide but yet to get UP");
                             break;
@@ -275,6 +276,7 @@ abstract public class Process {
                 } else if (recoverUP.size() == 1 && recoverUP.iterator().next() == procNo) {
                     switch (currentState) {
                         case Commitable:
+                            //Go up and get the transaction details
                             commit();
                             break;
                         case Uncertain:
@@ -373,9 +375,9 @@ abstract public class Process {
             MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFields[MsgGen.msgContent]);
             boolean shouldContinue = true;
             String margin = "";
-            if(isBackground(msg))
+            if (isBackground(msg))
                 margin = "...............................................................";
-            logger.log(Level.CONFIG, margin+msgContent.content+";From :"+fromProcId+";current state: "+currentState);
+            logger.log(Level.CONFIG, margin + msgContent.content + ";From :" + fromProcId + ";current state: " + currentState);
 
             switch (msgContent) {
                 case COMMIT:
@@ -419,7 +421,7 @@ abstract public class Process {
             logger.log(Level.SEVERE, "Error: Previous state to committable is not uncertain!");
             return;
         }
-        logger.log(Level.INFO, LogMsgType.PRECOMMIT.txt);
+        logger.log(Level.INFO, LogMsgType.PRECOMMIT.txt + MsgGen.MSG_FIELD_SEPARATOR + txCommand);
 
         currentState = ProcessState.Commitable;
     }
@@ -431,8 +433,8 @@ abstract public class Process {
             logger.log(Level.SEVERE, "Error: Previous state to commit is not commitable");
             return;
         }
-        logger.log(Level.INFO, LogMsgType.COMMIT.txt);
-        logger.log(Level.INFO, txCommand);
+        logger.log(Level.INFO, LogMsgType.COMMIT.txt + MsgGen.MSG_FIELD_SEPARATOR + txCommand);
+        //logger.log(Level.INFO, txCommand);
         currentState = ProcessState.Commited;
         String[] cmd = txCommand.split(TX_MSG_SEPARATOR);
         switch (playlistCommand.valueOf(cmd[0])) {

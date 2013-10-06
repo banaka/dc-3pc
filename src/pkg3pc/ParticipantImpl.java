@@ -61,7 +61,7 @@ public class ParticipantImpl extends Process implements Participant {
                 }
                 break;
             case PRECOMMIT:
-                //Chanage the state to precommit and Also send ACK to the Coordinator
+                //Change the state to precommit and Also send ACK to the Coordinator
                 precommit();
                 sendMsg(MsgContent.ACK, "", fromProcId);
                 break;
