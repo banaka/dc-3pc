@@ -27,6 +27,7 @@ abstract public class Process {
     NetController netController;
     Hashtable<String, String> playlist;
     String txCommand;
+    public int txNo;
     ProcessBackground processBackground;
     boolean vote;
     int totalMessageReceived;
@@ -36,6 +37,7 @@ abstract public class Process {
     public Logger logger;
     public int aliveTimeout;
     private final Set<MsgContent> backgroundSet = new HashSet<MsgContent>(Arrays.asList(MsgContent.IAMALIVE, MsgContent.CHECKALIVE));
+    boolean recovered ;
 
     public enum playlistCommand {
 
@@ -102,16 +104,16 @@ abstract public class Process {
 
 
         try {
-            FileHandler fh = new FileHandler(logFileName, true);
-            fh.setLevel(Level.INFO);
-            logger.addHandler(fh);
+            FileHandler fileHandler = new FileHandler(logFileName, true);
+            fileHandler.setLevel(Level.INFO);
+            logger.addHandler(fileHandler);
             SimpleFormatter formatter = new SimpleFormatter();
-            fh.setFormatter(formatter);
+            fileHandler.setFormatter(formatter);
 
         } catch (SecurityException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, e.getMessage());
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, e.getMessage());
         }
     }
 
@@ -159,6 +161,7 @@ abstract public class Process {
      */
     public void refreshState() {
         while (true) {
+            recovered = false;
             initTransaction();
         }
     }
@@ -175,17 +178,20 @@ abstract public class Process {
                 switch (playlistCommand.valueOf(cmd[0])) {
                     case ADD:
                         processAddToPlaylist(cmd[1], cmd[2]);
+                        txNo++;
                         break;
                     case EDIT:
                         processEditPlaylist(cmd[1], cmd[2], cmd[3], cmd[4]);
+                        txNo++;
                         break;
                     case DELETE:
                         processDelFromPlaylist(cmd[1], cmd[2]);
+                        txNo++;
                         break;
                 }
             }
         } catch (FileNotFoundException e) {
-            logger.log(Level.WARNING, "Playlist Doesnt seem to have been created yet!!" + e);
+            logger.log(Level.WARNING, "Playlist doesn't seem to have been created yet!!" + e);
             try {
                 new FileWriter(playListInstructions);
             } catch (IOException e1) {
@@ -205,7 +211,7 @@ abstract public class Process {
             while ((line = reader.readLine()) != null) {
                 logFile.add(line);
             }
-
+            recovered = true;
             for (int i = logFile.size() - 1; i >= 0; i--) {
                 if (logFile.get(i).contains("INFO:")) {
                     String matcher = logFile.get(i);
@@ -222,7 +228,6 @@ abstract public class Process {
                         this.txCommand = txcmd.substring(txCommand.lastIndexOf(":"));
                         commit();
                         return;
-
                     }
                 }
             }
