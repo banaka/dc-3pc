@@ -69,18 +69,6 @@ abstract public class Process {
 
         aliveTimeout = config.aliveTimeout;
 
-        try {
-            FileHandler fileHandler = new FileHandler(logFileName, true);
-            fileHandler.setLevel(Level.ALL);
-            fileHandler.setFormatter(new SimpleFormatter());
-            logger.addHandler(fileHandler);
-
-        } catch (SecurityException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
         //When starting the process initiate its playlist based of the values present in the playlist instructions
         recoverPlayList();
     }

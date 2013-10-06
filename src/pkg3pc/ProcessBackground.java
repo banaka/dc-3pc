@@ -27,8 +27,8 @@ public class ProcessBackground extends Thread {
                 p.sendMsg(MsgContent.CHECKALIVE,"",it.next());
             p.sleeping_for(p.aliveTimeout);
             p.upReply.add(p.procNo);
+            p.logger.log(Level.CONFIG, "Old UpSet:"+ p.up.toString() + "New UpSet:"+ p.upReply.toString() +" Current State :"+p.currentState);
             p.up = p.upReply;
-            p.logger.log(Level.CONFIG, "New Up Set :"+ p.up.toString() + " Current State :"+p.currentState);
         }
     }
 }

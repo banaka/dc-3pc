@@ -35,6 +35,7 @@ public class CoordinatorImpl extends Process implements Coordinator {
         logger.info(LogMsgType.START3PC.txt);
         for (int i = 0; i < noOfProcesses; i++) {
             this.up.add(i);
+            this.upReply.add(i);
         }
         sendVoteRequests();
         getVotes();

@@ -48,8 +48,10 @@ public class ParticipantImpl extends Process implements Participant {
                 try {
                     coordinator = fromProcId;
                     String[] ups = msgFields[MsgGen.ups].split(",");
-                    for(String s : ups)
+                    for(String s : ups) {
                         up.add(Integer.parseInt(s));
+                        upReply.add(Integer.parseInt(s));
+                    }
                     return processVoteRequest(msgFields[MsgGen.msgData], fromProcId);
                 } catch (ArrayIndexOutOfBoundsException e) {
                     System.out.println("Please Send your transaction command with Vote Req!!");
