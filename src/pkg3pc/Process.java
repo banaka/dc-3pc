@@ -20,6 +20,7 @@ abstract public class Process {
 
     Set<Integer> up = new HashSet<Integer>();
     Set<Integer> upReply = new HashSet<Integer>();
+    Set<Integer> recoverUP = new HashSet<Integer>();
 
     ProcessState currentState;
     int procNo;
@@ -221,8 +222,7 @@ abstract public class Process {
                         getUpset(matcher);
                         deriveredUpset = true;
 
-                        if(notDecided)
-                        {
+                        if (notDecided) {
                             System.out.println("GOT up and need to decide ");
                             break;
                         }
@@ -236,11 +236,10 @@ abstract public class Process {
                     } else if (matcher.contains(LogMsgType.PRECOMMIT.txt)) {
                         currentState = ProcessState.Commitable;
                         notDecided = true;
-                        if (deriveredUpset){
+                        if (deriveredUpset) {
                             System.out.println("Know need to decide but yet to get UP");
                             break;
-                        }
-                        else continue;
+                        } else continue;
                     } else if (matcher.contains(LogMsgType.COMMIT.txt)) {
                         String txcmd = logFile.get(i + 2);
                         this.txCommand = txcmd.substring(txCommand.lastIndexOf(":"));
@@ -256,33 +255,58 @@ abstract public class Process {
 
                 }
             }
-            if (notDecided) {//
-                if (up == null || up.size() == 0) {
-                    System.out.println("GOT up and need to decide ");
-                    //TODO :ERROR as we need the upset to go further the process cannot recover
-                }
-                Iterator<Integer> it = up.iterator();
-                while (it.hasNext()) {
-                    sendMsg(MsgContent.STATUS_REQ, "", it.next());
-                }
+            if (notDecided) {
+                //a. Cannot recover untill we have up a subet of recoversubset
+                //b. Cannot recover untill we have recoverUp non zero, non null
+                //c. IF recover is equal to itself then just ACT on the state you have
 
+                //
+                if (recoverUP == null || recoverUP.size() == 0) {
+                    System.out.println("Need to decide but do not have anything in UP");
+                    //cannot have recovery
+                    //TODO :ERROR as we need the upset to go further the process cannot recover
+                } else if (recoverUP.size() == 1 && recoverUP.iterator().next() == procNo) {
+                    switch (currentState) {
+                        case Commitable:
+                            commit();
+                            break;
+                        case Uncertain:
+                            abort();
+                            break;
+                    }
+                } else {
+                    //Check that all in up have come recover up have come up
+                    while (!recoverUP.containsAll(up)) {
+                        sleeping_for(10);
+                    }
+                    synchronized (up) {
+                        Iterator<Integer> it = up.iterator();
+                        while (it.hasNext()) {
+                            Integer i = it.next();
+                            if (i != procNo)
+                                sendMsg(MsgContent.STATUS_REQ, "", i);
+                        }
+                    }
+                }
 
                 //do not work until we get response form someone
                 //sendMsg(MsgContent.STATUS_REQ, "", up.iterator().next());
-                //Wait for response otherwise go to some other process)
+                //Wait for response otherwise ?????
+                startListening(0);
             }
 
         } catch (IOException e) {
             //logger.log(Level.FINE, "Unable to read the Log File. Recovery is not needed " + e);
             return;
         }
+
     }
 
     public void getUpset(String str) {
         if (str.contains((LogMsgType.UPSET.txt))) {
-            String[] set = str.substring(str.lastIndexOf("[")+1, str.lastIndexOf("]")).split(",");
+            String[] set = str.substring(str.lastIndexOf("[") + 1, str.lastIndexOf("]")).split(",");
             for (String j : set) {
-                up.add(Integer.parseInt(j.trim()));
+                recoverUP.add(Integer.parseInt(j.trim()));
             }
         }
     }

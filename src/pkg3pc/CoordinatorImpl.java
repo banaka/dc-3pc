@@ -89,8 +89,6 @@ public class CoordinatorImpl extends Process implements Coordinator {
         abort();
     }
 
-    /* TODO Apply synchronised to make sure we can iterate and make changes to the set at same time.*/
-
     public void send_commit() {
         logger.info(LogMsgType.COMMIT.txt);
         for (int i = 0; i < noOfProcesses; i++) {
@@ -146,7 +144,7 @@ public class CoordinatorImpl extends Process implements Coordinator {
     /**
      * Control Comes here only when we have all the votes or Timeout has taken place
      * We then Check if any of the vote if NO send abort
-     * else we send PRECOMMIT
+     * else we send PRE-COMMIT
      */
     public void processVotes() {
         logger.log(Level.CONFIG, "Votes Reply Set " + replySet);
