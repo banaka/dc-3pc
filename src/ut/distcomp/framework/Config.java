@@ -35,11 +35,10 @@ public class Config {
         prop.load(new FileInputStream(filename));
         numProcesses = Helper.loadInt(prop, "NumProcesses");
         timeout = 5000;
-        aliveTimeout = 2500;
+        aliveTimeout = 1000;
         if(prop.getProperty("delay") != null) {
             delay = Helper.loadInt(prop, "delay");
-            timeout = 5*delay;
-            aliveTimeout = 2*delay + 500;
+            timeout = 3*delay;
         }
         if(prop.getProperty("timeout") != null)
             timeout = Helper.loadInt(prop, "timeout");

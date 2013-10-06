@@ -61,7 +61,7 @@ public class NetController {
      * separator. Sends as ASCII. Include the sending server ID in the message
      * @return bool indicating success
      */
-    public synchronized boolean sendMsg(int process, String msg) {
+    public synchronized boolean sendMsg(int process, String msg, int delay) {
         try {
             Thread.sleep(this.config.delay);
         } catch (InterruptedException e) {

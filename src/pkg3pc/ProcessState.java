@@ -21,7 +21,7 @@ public enum ProcessState {
     Commited("COMMITED"),
 
     //Coordinator States
-    VoteReq(""),
+    VoteReq("UNCERTAIN"),
 //    VoteCounting("")
 
 //    //New Coordinator States

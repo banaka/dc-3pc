@@ -17,6 +17,7 @@ import java.util.logging.*;
 abstract public class Process {
 
     public final static String TX_MSG_SEPARATOR = "\\$";
+    private final Config config;
 
     Set<Integer> up = new HashSet<Integer>();
     Set<Integer> upReply = new HashSet<Integer>();
@@ -69,7 +70,7 @@ abstract public class Process {
         logFileName = "Log" + procNo + ".log";
         playListInstructions = "PlayListInstruction" + procNo + ".txt";
         setLogger();
-
+        this.config = config;
         aliveTimeout = config.aliveTimeout;
 
         //When starting the process initiate its playlist based of the values present in the playlist instructions
@@ -143,8 +144,14 @@ abstract public class Process {
 
     public void sendMsg(MsgContent msgCont, String data, int sendTo) {
         String outputMsg = MsgGen.genMsg(msgCont, data, procNo);
-        logger.log(Level.CONFIG, "Sent msg " + outputMsg + " to " + sendTo);
-        this.netController.sendMsg(sendTo, outputMsg);
+        String margin = "";
+        if(isBackground(outputMsg))
+            margin = "...............................................................";
+        logger.log(Level.CONFIG, margin+"Sent: " + outputMsg + " to " + sendTo);
+        int delay = config.delay;
+        if(isBackground(outputMsg))
+            delay = 0;
+        this.netController.sendMsg(sendTo, outputMsg, delay);
     }
 
     public void sendStateRequestRes(int procId) {
@@ -366,7 +373,7 @@ abstract public class Process {
             MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFields[MsgGen.msgContent]);
             boolean shouldContinue = true;
             String margin = "";
-            if(isBackground(msgContent.content))
+            if(isBackground(msg))
                 margin = "...............................................................";
             logger.log(Level.CONFIG, margin+msgContent.content+";From :"+fromProcId+";current state: "+currentState);
 
