@@ -267,7 +267,7 @@ abstract public class Process {
             }
             MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFields[MsgGen.msgContent]);
             boolean shouldContinue = true;
-            logger.log(Level.CONFIG, msgContent.content+";current state: "+currentState);
+            logger.log(Level.CONFIG, msgContent.content+";From :"+fromProcId+";current state: "+currentState);
 
             switch (msgContent) {
                 case COMMIT:
@@ -294,13 +294,23 @@ abstract public class Process {
     }
 
     public void abort() {
-        logger.log(Level.INFO, LogMsgType.ABORT.txt);
-        currentState = ProcessState.Aborted;
+        if (currentState == ProcessState.WaitForVotReq || currentState == ProcessState.Commited) {
+            logger.log(Level.SEVERE, "Error: Previous state "+currentState.msgState+" doesn't allow to abort!");
+            return;
+        }
+        if(currentState != ProcessState.Aborted) {
+            logger.log(Level.INFO, LogMsgType.ABORT.txt);
+            currentState = ProcessState.Aborted;
 
-        Helper.clearLogs(logFileName);
+            Helper.clearLogs(logFileName);
+        }
     }
 
     public void precommit() {
+        if (currentState != ProcessState.Uncertain) {
+            logger.log(Level.SEVERE, "Error: Previous state to committable is not uncertain!");
+            return;
+        }
         logger.log(Level.INFO, LogMsgType.PRECOMMIT.txt);
         currentState = ProcessState.Commitable;
     }

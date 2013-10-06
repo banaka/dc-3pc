@@ -64,11 +64,13 @@ public class ParticipantImpl extends Process implements Participant {
                 break;
             case U_R_COORDINATOR:
                 //update my uplist
-                updateCoordinator(fromProcId);
-                interimCoodrinator = true;
-                interimStates = new HashMap<Integer, MsgContent>();
-                //ask for state req
-                sendMsgToAll(MsgContent.STATE_REQ);
+                if(!interimCoodrinator) {
+                    updateCoordinator(fromProcId);
+                    interimCoodrinator = true;
+                    interimStates = new HashMap<Integer, MsgContent>();
+                    //ask for state req
+                    sendMsgToAll(MsgContent.STATE_REQ);
+                }
                 break;
             case ACK:
                 if (interimCoodrinator && currentState == ProcessState.Commitable) {
