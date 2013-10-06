@@ -34,8 +34,12 @@ public class CoordinatorImpl extends Process implements Coordinator {
         currentState = ProcessState.VoteReq;
         logger.info(LogMsgType.START3PC.txt);
         for (int i = 0; i < noOfProcesses; i++) {
-            this.up.add(i);
-            this.upReply.add(i);
+            synchronized (up) {
+                up.add(i);
+            }
+            synchronized (upReply) {
+                upReply.add(i);
+            }
         }
         sendVoteRequests();
         getVotes();

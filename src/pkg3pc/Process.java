@@ -140,7 +140,9 @@ abstract public class Process {
     }
 
     public void updateUpSet(int procId) {
-        upReply.add(procId);
+        synchronized (upReply) {
+            upReply.add(procId);
+        }
     }
 
     /**
