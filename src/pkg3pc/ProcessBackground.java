@@ -25,9 +25,9 @@ public class ProcessBackground extends Thread {
             Iterator<Integer> it = p.up.iterator();
             while(it.hasNext())
                 p.sendMsg(MsgContent.CHECKALIVE,"",it.next());
-            p.up.clear();
-            p.up.add(p.procNo);
             p.sleeping_for(p.aliveTimeout);
+            p.upReply.add(p.procNo);
+            p.up = p.upReply;
             p.logger.log(Level.CONFIG, "New Up Set :"+ p.up.toString() + " Current State :"+p.currentState);
         }
     }

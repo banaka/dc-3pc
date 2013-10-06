@@ -17,7 +17,10 @@ import java.util.logging.*;
 abstract public class Process {
 
     public final static String TX_MSG_SEPARATOR = "\\$";
+
     Set<Integer> up = new HashSet<Integer>();
+    Set<Integer> upReply = new HashSet<Integer>();
+
     ProcessState currentState;
     int procNo;
     int timeout;
@@ -149,8 +152,7 @@ abstract public class Process {
     }
 
     public void updateUpSet(int procId) {
-        up.add(procId);
-//        logger.log(Level.WARNING, up.toString());
+        upReply.add(procId);
     }
 
     /**
