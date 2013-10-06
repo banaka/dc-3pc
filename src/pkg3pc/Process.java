@@ -249,7 +249,7 @@ abstract public class Process {
                         } else continue;
                     } else if (matcher.contains(LogMsgType.COMMIT.txt)) {
                         String txcmd = logFile.get(i + 2);
-                        this.txCommand = txcmd.substring(txCommand.lastIndexOf(":"));
+                        this.txCommand = txcmd.substring(matcher.lastIndexOf(":")).trim();
                         commit();
                         return;
                     } else if (matcher.contains(LogMsgType.VOTEYES.txt)) {
