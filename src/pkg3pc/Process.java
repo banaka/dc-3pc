@@ -4,16 +4,9 @@
  */
 package pkg3pc;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.DirectoryNotEmptyException;
-import java.nio.file.NoSuchFileException;
 import ut.distcomp.framework.NetController;
 
+import java.io.*;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Set;
@@ -302,6 +295,10 @@ abstract public class Process {
     abstract public boolean handleSpecificCommands(MsgContent command, String[] msgFields);
 
     public void commit() {
+        if(currentState != ProcessState.Commitable) {
+
+            return;
+        }
         logger.log(Level.INFO, LogMsgType.COMMIT.txt);
 
         currentState = ProcessState.Commited;

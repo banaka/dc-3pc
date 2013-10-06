@@ -4,9 +4,12 @@
  */
 package pkg3pc;
 
-import ut.distcomp.framework.NetController;
+ import ut.distcomp.framework.NetController;
 
 import java.util.Collections;
+ import java.util.HashMap;
+ import java.util.Iterator;
+import java.util.Map;
 import java.util.logging.Level;
 
  /**
@@ -18,6 +21,8 @@ public class ParticipantImpl extends Process implements Participant {
         super(netController, procNo, stateToDie, voteInput, msgCount);
     }
     public int coordinator;
+    public boolean interimCoodrinator = false;
+    Map<Integer,MsgContent> interimStates;
     public void processStateRequest(){
         
     }
@@ -31,7 +36,16 @@ public class ParticipantImpl extends Process implements Participant {
     public boolean handleSpecificCommands(MsgContent msgContent, String[] msgFields) {
         int fromProcId = Integer.parseInt(msgFields[MessageGenerator.processNo].trim());
         switch (msgContent) {
+            case UNCERTAIN:
+            case COMMITABLE:
+            case COMMITED:
+            case ABORTED:
+                    interimStates.put(fromProcId, msgContent);
+                    if(interimStates.size() == up.size())
+                        takeDecision();
+                break;
             case STATE_REQ:
+                updateCoordinator(fromProcId);
                 sendStateRequestRes(fromProcId);
                 break;
             case VOTE_REQ:
@@ -43,7 +57,19 @@ public class ParticipantImpl extends Process implements Participant {
                     System.out.println("Please Send your transaction command with Vote Req!!");
                 }
                 break;
+            case U_R_COORDINATOR:
+                //update my uplist
+                updateCoordinator(fromProcId);
+                interimCoodrinator = true;
+                interimStates = new HashMap<Integer, MsgContent>();
+                //ask for state req
+                sendMsgToAll(MsgContent.STATE_REQ);
+                break;
             case TIMEOUT:
+                if(interimCoodrinator){
+                    takeDecision();
+                    break;
+                }
                 switch(currentState) {
                     case Uncertain:
                     case Commitable:
@@ -60,12 +86,42 @@ public class ParticipantImpl extends Process implements Participant {
                 }
                 break;
             default:
-                logger.log(Level.WARNING,"Not expected ::"+msgContent.content);
+                logger.log(Level.WARNING, "Not expected ::" + msgContent.content);
         }
         return true;
     }
 
-    public boolean processVoteRequest(String command, int sendTo) {
+     private void sendMsgToAll(MsgContent msgContent) {
+         Iterator<Integer> it = up.iterator();
+         while (it.hasNext())
+             sendMsg(msgContent,"",it.next());
+     }
+
+     private void takeDecision() {
+         if(interimStates.containsValue(MsgContent.COMMITED)) {
+             commit();
+             sendMsgToAll(MsgContent.COMMIT);
+         }
+         else if(interimStates.containsValue(MsgContent.ABORTED)) {
+             abort();
+             sendMsgToAll(MsgContent.ABORT);
+         }
+         else if(interimStates.containsValue(MsgContent.COMMITABLE)){
+
+
+         } else {
+             abort();
+             sendMsgToAll(MsgContent.ABORT);
+         }
+     }
+
+     private void updateCoordinator(int fromProcId) {
+         for(int i = coordinator; i < fromProcId; i++)
+             up.remove(i);
+         coordinator = fromProcId;
+     }
+
+     public boolean processVoteRequest(String command, int sendTo) {
         txCommand = command;
         if (vote) {
             logger.info(LogMsgType.VOTEYES.txt);
