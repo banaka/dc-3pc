@@ -6,7 +6,9 @@ package pkg3pc;
 
 import ut.distcomp.framework.NetController;
 
-/**
+import java.util.logging.Level;
+
+ /**
  *
  * @author bansal
  */
@@ -21,7 +23,7 @@ public class ParticipantImpl extends Process implements Participant {
     
     @Override
     public void precommit(){
-        logMsg("PRECOMMIT");
+        logger.info(LogMsgType.PRECOMMIT.txt);
     }
 
     @Override
@@ -29,7 +31,7 @@ public class ParticipantImpl extends Process implements Participant {
         int fromProcId = Integer.parseInt(msgFields[MessageGenerator.processNo].trim());
         switch (msgContent) {
             case VOTE_REQ:
-                logMsg("RECIEVED VOTE REQ");
+                logger.info(LogMsgType.REC_VOTE_REQ.txt);
                 try{
                     return processVoteRequest(msgFields[MessageGenerator.msgData], fromProcId);
                 } catch(ArrayIndexOutOfBoundsException e){
@@ -49,7 +51,7 @@ public class ParticipantImpl extends Process implements Participant {
                 }
                 break;
             default:
-                logMsg("Not expected ::"+msgContent.content);
+                logger.log(Level.WARNING,"Not expected ::"+msgContent.content);
         }
         return true;
     }
@@ -57,7 +59,7 @@ public class ParticipantImpl extends Process implements Participant {
     public boolean processVoteRequest(String command, int sendTo) {
         txCommand = command;
         if (vote) {
-            logMsg("SENT VOTE - "+vote);
+            logger.info(LogMsgType.VOTEYES.txt);
             currentState = ProcessState.LoggedVote;
             sendMsg(MsgContent.VoteYes, command, sendTo);
             currentState = ProcessState.Uncertain;
