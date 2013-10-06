@@ -131,6 +131,7 @@ public class CoordinatorImpl extends Process implements Coordinator {
         }else{
             send_abort();
          }
+        votes.clear();
     }
 
 }
