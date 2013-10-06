@@ -15,7 +15,8 @@ public enum LogMsgType {
     START3PC("START 3PC"),
     VOTEYES("SENT VOTE - YES"),
     REC_VOTE_REQ("RECIEVED VOTE REQ"),
-    NEWTX("NEW TX - WAITING FOR VOTE REQ");
+    NEWTX("NEW TX - WAITING FOR VOTE REQ"),
+    UPSET("CURRENT UP SET");
 
     public String txt;
 

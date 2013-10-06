@@ -27,7 +27,7 @@ public class ProcessBackground extends Thread {
             p.sleeping_for(p.aliveTimeout);
             p.upReply.add(p.procNo);
             p.logger.log(Level.CONFIG, "Old UpSet:" + p.up.toString() + " Current State :" + p.currentState);
-            p.logger.log(Level.INFO, LogMsgType.UPSET + "  " + p.upReply.toString());
+            p.logger.log(Level.INFO, LogMsgType.UPSET.txt + "  " + p.upReply.toString());
             p.up = p.upReply;
         }
     }
