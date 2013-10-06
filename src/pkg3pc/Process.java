@@ -65,21 +65,8 @@ abstract public class Process {
 
         aliveTimeout = config.aliveTimeout;
 
-        try {
-            FileHandler fh = new FileHandler(logFileName, true);
-            logger.addHandler(fh);
-            SimpleFormatter formatter = new SimpleFormatter();
-            fh.setFormatter(formatter);
-
-        } catch (SecurityException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
         //When starting the process initiate its playlist based of the values present in the playlist instructions
         recoverPlayList();
-
     }
 
     private void setLogger() {
@@ -99,6 +86,20 @@ abstract public class Process {
             logger.addHandler(consoleHandler);
         }
         consoleHandler.setLevel(Level.CONFIG);
+
+
+        try {
+            FileHandler fh = new FileHandler(logFileName, true);
+            fh.setLevel(Level.INFO);
+            logger.addHandler(fh);
+            SimpleFormatter formatter = new SimpleFormatter();
+            fh.setFormatter(formatter);
+
+        } catch (SecurityException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     void updateMessagesReceived() {
