@@ -4,7 +4,6 @@
  */
 package pkg3pc;
 
-import sun.util.logging.PlatformLogger;
 import ut.distcomp.framework.NetController;
 
 import java.util.HashMap;
@@ -56,7 +55,6 @@ public class CoordinatorImpl extends Process implements Coordinator {
 
     private void send_abort() {
         logger.info(LogMsgType.ABORT.txt);
-        currentState = ProcessState.LoggedAbort;
         for (int i : up)
             if (("VoteYes").equals(this.votes.get(i)))
                 sendMsg(MsgContent.ABORT, "", i);
@@ -65,7 +63,6 @@ public class CoordinatorImpl extends Process implements Coordinator {
 
     private void send_commit() {
         logger.info(LogMsgType.COMMIT.txt);
-        currentState = ProcessState.LoggedCommit;
         for (int i : up)
             sendMsg(MsgContent.COMMIT, "", i);
         commit();
@@ -97,7 +94,6 @@ public class CoordinatorImpl extends Process implements Coordinator {
         //Votes Check...
         if (votes.size() < (up.size() - 1))
             return;
-        currentState = ProcessState.VoteCounting;
         System.out.println(votes);
         boolean allSaidYes = true;
         if (this.vote == false)
