@@ -4,17 +4,18 @@
 */
 package pkg3pc;
 
- import ut.distcomp.framework.NetController;
+import ut.distcomp.framework.Config;
+import ut.distcomp.framework.NetController;
 
- import java.util.*;
- import java.util.logging.Level;
+import java.util.*;
+import java.util.logging.Level;
 
 /**
  * @author bansal
  */
 public class ParticipantImpl extends Process implements Participant {
-    ParticipantImpl(NetController netController, int procNo, ProcessState stateToDie, Boolean voteInput, int msgCount) {
-        super(netController, procNo, stateToDie, voteInput, msgCount);
+    ParticipantImpl(NetController netController, int procNo, Boolean voteInput, int msgCount, Config config) {
+        super(netController, procNo, voteInput, msgCount, config);
     }
     public int coordinator;
     public boolean interimCoodrinator = false;

@@ -29,8 +29,13 @@ public class Config {
         Properties prop = new Properties();
         prop.load(new FileInputStream(filename));
         numProcesses = Helper.loadInt(prop, "NumProcesses");
-        if(prop.getProperty("delay") != null)
+        timeout = 5000;
+        if(prop.getProperty("delay") != null) {
             delay = Helper.loadInt(prop, "delay");
+            timeout = 5*delay;
+        }
+        if(prop.getProperty("timeout") != null)
+            timeout = Helper.loadInt(prop, "timeout");
         command = prop.getProperty("command").trim();
         clean = prop.getProperty("clean");
         logger = Logger.getLogger("NetFramework");
@@ -49,6 +54,7 @@ public class Config {
 	 */
 	public Config() {
 	}
+    public int timeout;
     public String clean;
     public int delay;
     public String command;

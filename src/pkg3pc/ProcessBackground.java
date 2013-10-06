@@ -60,7 +60,8 @@ public class ProcessBackground extends Thread {
             while(it.hasNext())
                 p.sendMsg(MsgContent.CHECKALIVE,"",it.next());
             p.up.clear();
-            p.sleeping_for(2000);
+            p.up.add(p.procNo);
+            p.sleeping_for(500);
             p.logger.log(Level.WARNING, p.up.toString());
         }
     }

@@ -4,6 +4,7 @@
  */
 package pkg3pc;
 
+import ut.distcomp.framework.Config;
 import ut.distcomp.framework.NetController;
 
 import java.util.HashMap;
@@ -18,6 +19,12 @@ public class CoordinatorImpl extends Process implements Coordinator {
 
     Map<Integer, String> replySet = new HashMap<Integer, String>();
     int noOfProcesses;
+
+    CoordinatorImpl(NetController netController, int procNo, Boolean voteInput, int msgCount, Config config) {
+        super(netController, procNo, voteInput, msgCount, config);
+        this.txCommand = config.command;
+        this.noOfProcesses = config.numProcesses;
+    }
 
     @Override
     public void initTransaction() {
@@ -89,13 +96,6 @@ public class CoordinatorImpl extends Process implements Coordinator {
         for (int i : up)
             sendMsg(MsgContent.PRECOMMIT, "", i);
         precommit();
-    }
-
-    CoordinatorImpl(NetController netController, int procNo, ProcessState stateToDie, Boolean voteInput,
-                    String txData, int totalProcNo, int msgCount) {
-        super(netController, procNo, stateToDie, voteInput, msgCount);
-        this.txCommand = txData;
-        this.noOfProcesses = totalProcNo;
     }
 
     public void sendVoteRequests() {

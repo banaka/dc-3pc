@@ -4,6 +4,7 @@
  */
 package pkg3pc;
 
+import ut.distcomp.framework.Config;
 import ut.distcomp.framework.NetController;
 
 import java.io.*;
@@ -25,8 +26,7 @@ abstract public class Process {
     //ADD$Song$URL
     //EDIT$SONGOLD$URLOLD$NEWSONG$NEWURL
     //DELETE$SONG$URL
-    int viewNumber;
-    //Set to maintain the up set 
+    //Set to maintain the up set
     Set<Integer> up = new HashSet<Integer>();
     ProcessState currentState;
     ProcessState endState;
@@ -59,14 +59,12 @@ abstract public class Process {
         }
     }
 
-    Process(NetController netController, int procNo, ProcessState stateToDie, Boolean voteInput, int msgCount) {
+    Process(NetController netController, int procNo, Boolean voteInput, int msgCount, Config config) {
         this.netController = netController;
         this.vote = voteInput;
         this.procNo = procNo;
-        this.endState = stateToDie;
-        timeout = 5000;
+        timeout = config.delay;
         playlist = new Hashtable<String, String>();
-        viewNumber = 0;
         processBackground = new ProcessBackground(this);
         processBackground.start();
         totalMessageToReceive = msgCount;
