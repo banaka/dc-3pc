@@ -42,7 +42,6 @@ public class CoordinatorImpl extends Process implements Coordinator {
     }
 
     public void precommitPhase() {
-        logger.info(LogMsgType.PRECOMMIT.txt);
         precommit();
         replySet.clear();
         startListening(timeout);
@@ -82,7 +81,7 @@ public class CoordinatorImpl extends Process implements Coordinator {
 
     public void send_abort() {
         logger.info(LogMsgType.ABORT.txt + " Before sending TO ALL");
-        for (int i : up)
+        for (int i = 0; i < noOfProcesses; i++)
             if (("VoteYes").equals(this.replySet.get(i)))
                 sendMsg(MsgContent.ABORT, "", i);
         abort();
