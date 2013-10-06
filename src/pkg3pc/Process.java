@@ -293,7 +293,7 @@ abstract public class Process {
 
     public void commit() {
         if(currentState != ProcessState.Commitable) {
-
+            logger.log(Level.SEVERE, "Error: Previous state to commit is not commitable");
             return;
         }
         logger.log(Level.INFO, LogMsgType.COMMIT.txt);
