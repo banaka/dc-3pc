@@ -44,7 +44,11 @@ public class Config {
             aliveTimeout = Helper.loadInt(prop, "timeout")/2;
         command = prop.getProperty("command").trim();
         clean = prop.getProperty("clean");
+
         logger = Logger.getLogger("NetFramework");
+//        Handler handler = new FileHandler();
+//        handler.setFormatter(new CustomFormatter());
+//        logger.addHandler(handler);
 
         addresses = new InetAddress[numProcesses];
 		ports = new int[numProcesses];
