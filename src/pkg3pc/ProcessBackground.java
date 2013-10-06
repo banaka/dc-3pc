@@ -24,6 +24,7 @@ public class ProcessBackground extends Thread {
             Iterator<Integer> it = p.up.iterator();
             while (it.hasNext())
                 p.sendMsg(MsgContent.CHECKALIVE, "", it.next());
+            p.upReply.clear();
             p.sleeping_for(p.aliveTimeout);
             p.upReply.add(p.procNo);
             p.logger.log(Level.CONFIG, "Old UpSet:" + p.up.toString() + " Current State :" + p.currentState);

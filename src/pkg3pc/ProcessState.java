@@ -10,7 +10,7 @@ package pkg3pc;
  */
 public enum ProcessState {
     //Partcipants States
-    WaitForVotReq(""),
+    WaitForVotReq("UNCERTAIN"),
     Uncertain("UNCERTAIN"),
     Commitable("COMMITABLE"),
 //    SentACK,

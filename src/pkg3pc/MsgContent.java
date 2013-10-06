@@ -23,6 +23,7 @@ public enum MsgContent {
     //PreCommitResponse
     ACK("ACK"),
     //State Req Responses
+
     UNCERTAIN("UNCERTAIN"),
     COMMITABLE("COMMITABLE"),
     COMMITED("COMMITED"),
