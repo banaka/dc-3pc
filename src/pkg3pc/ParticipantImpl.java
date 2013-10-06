@@ -51,9 +51,9 @@ public class ParticipantImpl extends Process implements Participant {
                         synchronized (up) {
                             up.add(Integer.parseInt(s));
                         }
-                        synchronized (upReply) {
-                            upReply.add(Integer.parseInt(s));
-                        }
+//                        synchronized (upReply) {
+//                            upReply.add(Integer.parseInt(s));
+//                        }
                     }
                     return processVoteRequest(msgFields[MsgGen.msgData], fromProcId);
                 } catch (ArrayIndexOutOfBoundsException e) {
@@ -104,11 +104,8 @@ public class ParticipantImpl extends Process implements Participant {
                     case Commitable:
                         //Run Coordinator election
                         synchronized (up) {
-                            System.out.println(up);
                             up.remove(coordinator);
-                            System.out.println(up);
                             coordinator = Collections.min(up);
-                            System.out.println(up);
                         }
                         sendMsg(MsgContent.U_R_COORDINATOR, "", coordinator);
                         break;

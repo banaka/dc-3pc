@@ -37,9 +37,9 @@ public class CoordinatorImpl extends Process implements Coordinator {
             synchronized (up) {
                 up.add(i);
             }
-            synchronized (upReply) {
-                upReply.add(i);
-            }
+//            synchronized (upReply) {
+//                upReply.add(i);
+//            }
         }
         sendVoteRequests();
         getVotes();

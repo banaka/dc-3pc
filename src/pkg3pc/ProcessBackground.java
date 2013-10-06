@@ -4,6 +4,12 @@
  */
 package pkg3pc;
 
+import java.io.IOException;
+import java.net.DatagramSocket;
+import java.net.ServerSocket;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.logging.Level;
 
 /**
@@ -20,20 +26,61 @@ public class ProcessBackground extends Thread {
 
     public void run() {
         while (true) {
-            p.sendMsgToAll(MsgContent.CHECKALIVE);
-
-            synchronized (p.upReply) {
-                p.upReply.clear();
-            }
-            p.sleeping_for(p.aliveTimeout);
-            synchronized (p.upReply) {
-                p.upReply.add(p.procNo);
-            }
-            p.logger.log(Level.CONFIG, "Old UpSet:" + p.up + " Current State :" + p.currentState);
-            p.logger.log(Level.INFO, LogMsgType.UPSET.txt + "  " + p.upReply);
+//            p.sendMsgToAll(MsgContent.CHECKALIVE);
+            Set<Integer> oldUp = p.up;
             synchronized (p.up) {
-                p.up = p.upReply;
+                Set<Integer> temp = new HashSet<Integer>();
+                temp.add(p.procNo);
+                Iterator<Integer> it = p.up.iterator();
+                while(it.hasNext()){
+                    int proc = it.next();
+                    if(!available(8080+proc))
+                        temp.add(proc);
+                }
+                p.up = temp;
             }
+
+//            synchronized (p.upReply) {
+//                p.upReply.clear();
+//            }
+            p.sleeping_for(p.aliveTimeout);
+//            synchronized (p.upReply) {
+//                p.upReply.add(p.procNo);
+//            }
+            String margin = "...............................................................";
+            p.logger.log(Level.CONFIG, margin + "Old UpSet:" + oldUp + " Current State :" + p.currentState);
+            p.logger.log(Level.INFO, margin+ LogMsgType.UPSET.txt + "  " + p.up);
+//            synchronized (p.up) {
+//                p.up = p.upReply;
+//            }
         }
     }
+
+    public static boolean available(int port) {
+        ServerSocket ss = null;
+        DatagramSocket ds = null;
+        try {
+            ss = new ServerSocket(port);
+            ss.setReuseAddress(true);
+            ds = new DatagramSocket(port);
+            ds.setReuseAddress(true);
+            return true;
+        } catch (IOException e) {
+        } finally {
+            if (ds != null) {
+                ds.close();
+            }
+
+            if (ss != null) {
+                try {
+                    ss.close();
+                } catch (IOException e) {
+                /* should not be thrown */
+                }
+            }
+        }
+
+        return false;
+    }
+
 }

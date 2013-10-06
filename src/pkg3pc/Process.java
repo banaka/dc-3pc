@@ -17,10 +17,10 @@ import java.util.logging.*;
 abstract public class Process {
 
     public final static String TX_MSG_SEPARATOR = "\\$";
-    private final Config config;
+    public Config config;
 
     Set<Integer> up = new HashSet<Integer>();
-    Set<Integer> upReply = new HashSet<Integer>();
+//    Set<Integer> upReply = new HashSet<Integer>();
     Set<Integer> recoverUP = new HashSet<Integer>();
 
     ProcessState currentState;
@@ -158,11 +158,11 @@ abstract public class Process {
         sendMsg(Enum.valueOf(MsgContent.class, currentState.msgState), "", procId);
     }
 
-    public void updateUpSet(int procId) {
-        synchronized (upReply) {
-            upReply.add(procId);
-        }
-    }
+//    public void updateUpSet(int procId) {
+//        synchronized (upReply) {
+//            upReply.add(procId);
+//        }
+//    }
 
     /**
      * This Function Makes sure that the processes reset their state once every transaction is completed.
@@ -386,12 +386,12 @@ abstract public class Process {
                     abort();
                     shouldContinue = false;
                     break;
-                case CHECKALIVE:
-                    sendMsg(MsgContent.IAMALIVE, "", fromProcId);
-                    break;
-                case IAMALIVE:
-                    updateUpSet(fromProcId);
-                    break;
+//                case CHECKALIVE:
+//                    sendMsg(MsgContent.IAMALIVE, "", fromProcId);
+//                    break;
+//                case IAMALIVE:
+//                    updateUpSet(fromProcId);
+//                    break;
                 default:
                     shouldContinue = handleSpecificCommands(msgContent, msgFields);
             }

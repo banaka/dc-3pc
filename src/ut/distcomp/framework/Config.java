@@ -35,7 +35,7 @@ public class Config {
         prop.load(new FileInputStream(filename));
         numProcesses = Helper.loadInt(prop, "NumProcesses");
         timeout = 5000;
-        aliveTimeout = 1000;
+        aliveTimeout = 1500;
         if(prop.getProperty("delay") != null) {
             delay = Helper.loadInt(prop, "delay");
             timeout = 3*delay;
