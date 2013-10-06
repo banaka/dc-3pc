@@ -292,7 +292,7 @@ abstract public class Process {
         logger.log(Level.INFO, LogMsgType.ABORT.txt);
         currentState = ProcessState.Aborted;
 
-        clearLogs();
+        Helper.clearLogs(logFileName);
     }
 
     abstract public void precommit();
@@ -331,18 +331,8 @@ abstract public class Process {
         } catch (IOException e) {
             logger.log(Level.FINE, "Unable to write into the PlaylistInstructions File. Please Check!!" + e);
         }
-        clearLogs();
+        Helper.clearLogs(logFileName);
 
-    }
-
-    public void clearLogs() {
-        try {
-            FileWriter fileWriter = new FileWriter(logFileName);
-            fileWriter.write("");
-            fileWriter.close();
-        } catch (IOException x) {
-            logger.log(Level.SEVERE, "Error while deleting the File " + logFileName + " " + x.getStackTrace());
-        }
     }
 }
 

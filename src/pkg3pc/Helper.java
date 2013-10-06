@@ -4,6 +4,8 @@
  */
 package pkg3pc;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Properties;
 
 /**
@@ -16,5 +18,14 @@ import java.util.Properties;
 		return Integer.parseInt(prop.getProperty(s.trim()));
 	}
 
-    
+
+    static public void clearLogs(String logFileName) {
+        try {
+            FileWriter fileWriter = new FileWriter(logFileName);
+            fileWriter.write("");
+            fileWriter.close();
+        } catch (IOException x) {
+            x.printStackTrace();
+        }
+    }
 }

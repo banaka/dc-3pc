@@ -32,7 +32,7 @@ public class Config {
         if(prop.getProperty("delay") != null)
             delay = Helper.loadInt(prop, "delay");
         command = prop.getProperty("command").trim();
-
+        clean = prop.getProperty("clean");
         logger = Logger.getLogger("NetFramework");
 
         addresses = new InetAddress[numProcesses];
@@ -49,7 +49,7 @@ public class Config {
 	 */
 	public Config() {
 	}
-
+    public String clean;
     public int delay;
     public String command;
 	/**

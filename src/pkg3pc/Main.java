@@ -18,7 +18,8 @@ public class Main {
         Process p;
         Boolean vote = true;
         int pid = Integer.parseInt(args[0]);
-
+        if(config.clean != null)
+            Helper.clearLogs("Log" + pid + ".log");
         if(args.length > 1)
             vote = Boolean.parseBoolean(args[1]);
 
@@ -40,7 +41,7 @@ public class Main {
                 pid = Integer.parseInt(args[0]);
         else
             throw new IOException("Enter PID as the first parameter!");
-        String filename = "config.txt";
+        String filename = "config.properties";
 
 //        List<NetController> netControllerList = new ArrayList<NetController>();
 
