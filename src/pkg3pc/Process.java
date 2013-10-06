@@ -37,7 +37,7 @@ abstract public class Process {
     public Logger logger;
     public int aliveTimeout;
     private final Set<MsgContent> backgroundSet = new HashSet<MsgContent>(Arrays.asList(MsgContent.IAMALIVE, MsgContent.CHECKALIVE));
-    boolean recovered ;
+    boolean recovered;
 
     public enum playlistCommand {
 
@@ -64,16 +64,17 @@ abstract public class Process {
         processBackground = new ProcessBackground(this);
         processBackground.start();
         totalMessageToReceive = msgCount;
-
         logFileName = "Log" + procNo + ".log";
         playListInstructions = "PlayListInstruction" + procNo + ".txt";
+        //First recover the processes
+        recoverPlayList();
+        recoverIfNeeded();
+        //Then set the logger
         setLogger();
 
         aliveTimeout = config.aliveTimeout;
 
         //When starting the process initiate its playlist based of the values present in the playlist instructions
-        recoverPlayList();
-        recoverIfNeeded();
     }
 
     public void sendMsgToAll(MsgContent msgContent) {
@@ -191,7 +192,7 @@ abstract public class Process {
                 }
             }
         } catch (FileNotFoundException e) {
-            logger.log(Level.WARNING, "Playlist doesn't seem to have been created yet!!" + e);
+            //logger.log(Level.WARNING, "Playlist doesn't seem to have been created yet!!");
             try {
                 new FileWriter(playListInstructions);
             } catch (IOException e1) {
@@ -212,29 +213,70 @@ abstract public class Process {
                 logFile.add(line);
             }
             recovered = true;
+            boolean notDecided = false;
+            boolean deriveredUpset = false;
             for (int i = logFile.size() - 1; i >= 0; i--) {
                 if (logFile.get(i).contains("INFO:")) {
                     String matcher = logFile.get(i);
-                    if (matcher.contains(LogMsgType.ABORT.txt)) {
+                    if (!deriveredUpset && matcher.contains((LogMsgType.UPSET.txt))) {
+                        getUpset(matcher);
+                        deriveredUpset = true;
+                        if (!notDecided)
+                            break;
+                    }
+                    if (matcher.contains(LogMsgType.NEWTX.txt)) {
+                        //The process is sure that COMMIT has not taken place so the process can again start waiting
+                        return;
+                    } else if (matcher.contains(LogMsgType.ABORT.txt) || matcher.contains(LogMsgType.REC_VOTE_REQ.txt)) {
                         abort();
                         return;
                     } else if (matcher.contains(LogMsgType.PRECOMMIT.txt)) {
-                        //send message to all and proceed based of the reply
-                        //do not work until we get response form someone
-                        sendMsg(MsgContent.STATUS_REQ,"",up.iterator().next());
-                        //Wait for response otherwise go to some other process
+                        currentState = ProcessState.Commitable;
+                        notDecided = true;
+                        if (deriveredUpset)
+                            break;
+                        else continue;
                     } else if (matcher.contains(LogMsgType.COMMIT.txt)) {
                         String txcmd = logFile.get(i + 2);
                         this.txCommand = txcmd.substring(txCommand.lastIndexOf(":"));
                         commit();
                         return;
+                    } else if (matcher.contains(LogMsgType.VOTEYES.txt)) {
+                        currentState = ProcessState.Uncertain;
+                        notDecided = true;
+                        if (deriveredUpset)
+                            break;
+                        else continue;
                     }
+
                 }
+            }
+            if (notDecided) {//
+                if (up == null || up.size() == 0) {
+                    //TODO :ERROR as we need the upset to go further the process cannot recover
+                }
+                Iterator<Integer> it = up.iterator();
+                while (it.hasNext()) {
+                    sendMsg(MsgContent.STATUS_REQ, "", up.iterator().next());
+                }
+
+                //do not work until we get response form someone
+                //sendMsg(MsgContent.STATUS_REQ, "", up.iterator().next());
+                //Wait for response otherwise go to some other process)
             }
 
         } catch (IOException e) {
-            logger.log(Level.FINE, "Unable to read the Log File. Recovery is not needed " + e);
+            //logger.log(Level.FINE, "Unable to read the Log File. Recovery is not needed " + e);
             return;
+        }
+    }
+
+    public void getUpset(String str) {
+        if (str.contains((LogMsgType.UPSET.txt))) {
+            String[] set = str.substring(str.lastIndexOf("["), str.lastIndexOf("]")).split(",");
+            for (String j : set) {
+                up.add(Integer.parseInt(j));
+            }
         }
     }
 
@@ -291,7 +333,7 @@ abstract public class Process {
             }
             MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFields[MsgGen.msgContent]);
             boolean shouldContinue = true;
-            logger.log(Level.CONFIG, msgContent.content+";From :"+fromProcId+";current state: "+currentState);
+            logger.log(Level.CONFIG, msgContent.content + ";From :" + fromProcId + ";current state: " + currentState);
 
             switch (msgContent) {
                 case COMMIT:
@@ -319,10 +361,10 @@ abstract public class Process {
 
     public void abort() {
         if (currentState == ProcessState.WaitForVotReq || currentState == ProcessState.Commited) {
-            logger.log(Level.SEVERE, "Error: Previous state "+currentState.msgState+" doesn't allow to abort!");
+            logger.log(Level.SEVERE, "Error: Previous state " + currentState.msgState + " doesn't allow to abort!");
             return;
         }
-        if(currentState != ProcessState.Aborted) {
+        if (currentState != ProcessState.Aborted) {
             logger.log(Level.INFO, LogMsgType.ABORT.txt);
             currentState = ProcessState.Aborted;
 

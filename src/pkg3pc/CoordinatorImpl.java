@@ -47,7 +47,6 @@ public class CoordinatorImpl extends Process implements Coordinator {
     }
 
     public void precommitPhase() {
-        precommit();
         replySet.clear();
         startListening(timeout);
         processAcks();
@@ -107,6 +106,7 @@ public class CoordinatorImpl extends Process implements Coordinator {
             if (i != procNo)
                 sendMsg(MsgContent.PRECOMMIT, "", i);
         }
+        currentState = ProcessState.Commitable;
         precommitPhase();
     }
 

@@ -66,8 +66,9 @@ public class ParticipantImpl extends Process implements Participant {
                 precommit();
                 sendMsg(MsgContent.ACK, "", fromProcId);
                 break;
-            case CURRENT_STATUS_REQ:
-
+            case STATUS_REQ:
+                sendMsg(Enum.valueOf(MsgContent.class, currentState.msgState), txCommand, fromProcId);
+                //sendStatusRequestRes(fromProcId);
                 break;
             case U_R_COORDINATOR:
                 //update my uplist
