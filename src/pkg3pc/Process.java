@@ -130,7 +130,7 @@ abstract public class Process {
     }
 
     public void sendStateRequestRes(int procId) {
-        sendMsg(Enum.valueOf(MsgContent.class, currentState.msgState),"",procId);
+        sendMsg(Enum.valueOf(MsgContent.class, currentState.msgState), "", procId);
     }
 
     public void updateUpSet(int procId) {
@@ -184,21 +184,23 @@ abstract public class Process {
             while ((line = reader.readLine()) != null) {
                 logFile = logFile.append(line).append(System.getProperty("line.separator"));
             }
-            String fileContents=logFile.toString();
+            //Create a arraylist and read form end
+
+            String fileContents = logFile.toString();
             if (fileContents.contains(LogMsgType.START3PC.txt)) {
-                    //TODO should be done in Coordinator code base
+                //TODO should be done in Coordinator code base
             } else {
                 if (fileContents.contains(LogMsgType.ABORT.txt)) {
                     abort();
                     return;
+                } else if (fileContents.contains(LogMsgType.PRECOMMIT.txt)) {
+                    //TODO Check with up set people
                 } else if (fileContents.contains(LogMsgType.COMMIT.txt)) {
                     String txcmd = fileContents.substring(fileContents.lastIndexOf(LogMsgType.COMMIT.txt)).split(System.getProperty("line.separator"))[2];
-                    this.txCommand =txcmd.substring(txCommand.lastIndexOf(":"));
+                    this.txCommand = txcmd.substring(txCommand.lastIndexOf(":"));
                     commit();
                     return;
 
-                } else if (fileContents.contains(LogMsgType.PRECOMMIT.txt)){
-                    //TODO Check with up set people
                 }
             }
 
@@ -286,12 +288,12 @@ abstract public class Process {
     abstract public boolean handleSpecificCommands(MsgContent command, String[] msgFields);
 
     public void commit() {
-        if(currentState != ProcessState.Commitable) {
+        if (currentState != ProcessState.Commitable) {
             logger.log(Level.SEVERE, "Error: Previous state to commit is not commitable");
             return;
         }
         logger.log(Level.INFO, LogMsgType.COMMIT.txt);
-        logger.log(Level.INFO,txCommand);
+        logger.log(Level.INFO, txCommand);
         currentState = ProcessState.Commited;
         String[] cmd = txCommand.split(TX_MSG_SEPARATOR);
         switch (playlistCommand.valueOf(cmd[0])) {
