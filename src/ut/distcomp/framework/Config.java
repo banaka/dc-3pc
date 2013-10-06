@@ -39,7 +39,7 @@ public class Config {
         if(prop.getProperty("delay") != null) {
             delay = Helper.loadInt(prop, "delay");
             timeout = 4*delay;
-            aliveTimeout = 2*delay;
+            aliveTimeout = 2*delay + 100;
         }
         if(prop.getProperty("timeout") != null)
             timeout = Helper.loadInt(prop, "timeout");

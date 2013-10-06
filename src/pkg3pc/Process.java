@@ -32,6 +32,7 @@ abstract public class Process {
     String playListInstructions;
     public Logger logger;
     public int aliveTimeout;
+    private final Set<MsgContent> backgroundSet = new HashSet<MsgContent>(Arrays.asList(MsgContent.IAMALIVE, MsgContent.CHECKALIVE));
 
     public enum playlistCommand {
 
@@ -79,8 +80,6 @@ abstract public class Process {
 
         //When starting the process initiate its playlist based of the values present in the playlist instructions
         recoverPlayList();
-        recoverIfNeeded();
-
     }
 
     private void setLogger() {
@@ -100,6 +99,20 @@ abstract public class Process {
             logger.addHandler(consoleHandler);
         }
         consoleHandler.setLevel(Level.CONFIG);
+
+
+        try {
+            FileHandler fh = new FileHandler(logFileName, true);
+            fh.setLevel(Level.INFO);
+            logger.addHandler(fh);
+            SimpleFormatter formatter = new SimpleFormatter();
+            fh.setFormatter(formatter);
+
+        } catch (SecurityException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     void updateMessagesReceived() {
@@ -233,7 +246,7 @@ abstract public class Process {
     public String waitTillTimeoutForMessage(GlobalCounter globalCounter, int globalTimeout) {
         String msg;
         int counter = globalCounter.value;
-        while ((msg = this.netController.getReceivedMsgMain()) == null) {
+        while ((msg = this.netController.getReceivedMsgMain()) == null || isBackground(msg)) {
             if (counter >= timeout) {
                 msg = procNo + ";TIMEOUT";
                 break;
@@ -245,6 +258,12 @@ abstract public class Process {
             globalCounter.value += counter;
         }
         return msg;
+    }
+
+    private boolean isBackground(String msg) {
+        String[] msgFields = msg.split(MsgGen.MSG_FIELD_SEPARATOR);
+        MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFields[MsgGen.msgContent]);
+        return backgroundSet.contains(msgContent);
     }
 
     public void startListening(int globalTimeout) {
