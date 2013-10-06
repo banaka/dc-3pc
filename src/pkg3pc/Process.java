@@ -66,10 +66,10 @@ abstract public class Process {
         aliveTimeout = config.aliveTimeout;
 
         try {
-            FileHandler fh = new FileHandler(logFileName, true);
-            logger.addHandler(fh);
-            SimpleFormatter formatter = new SimpleFormatter();
-            fh.setFormatter(formatter);
+            FileHandler fileHandler = new FileHandler(logFileName, true);
+            fileHandler.setLevel(Level.ALL);
+            fileHandler.setFormatter(new SimpleFormatter());
+            logger.addHandler(fileHandler);
 
         } catch (SecurityException e) {
             e.printStackTrace();
@@ -79,6 +79,7 @@ abstract public class Process {
 
         //When starting the process initiate its playlist based of the values present in the playlist instructions
         recoverPlayList();
+        recoverIfNeeded();
 
     }
 
@@ -138,11 +139,11 @@ abstract public class Process {
 //        logger.log(Level.WARNING, up.toString());
     }
 
+    /**
+     * This Function Makes sure that the processes reset their state once every transaction is completed.
+     */
     public void refreshState() {
         while (true) {
-            isRecoveryNeeded();
-            /*ToDo: Clear my queue both back and main */
-            // If init transaction //
             initTransaction();
         }
     }
@@ -180,7 +181,7 @@ abstract public class Process {
         }
     }
 
-    public void isRecoveryNeeded() {
+    public void recoverIfNeeded() {
         try {
             FileReader file = new FileReader(logFileName);
             BufferedReader reader = new BufferedReader(file);
@@ -189,7 +190,6 @@ abstract public class Process {
             while ((line = reader.readLine()) != null) {
                 logFile.add(line);
             }
-            //TODO Create a arraylist and read form end
 
             for (int i = logFile.size() - 1; i >= 0; i--) {
                 if (logFile.get(i).contains("INFO:")) {
