@@ -48,7 +48,7 @@ public class CoordinatorImpl extends Process implements Coordinator {
                 shouldContinue = false;
                 break;
             default:
-                logger.log(Level.WARNING,"Not expected ::" + msgContent.content);
+                logger.log(Level.WARNING, "Not expected ::" + msgContent.content);
         }
         return shouldContinue;
     }

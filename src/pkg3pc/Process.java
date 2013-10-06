@@ -4,6 +4,12 @@
  */
 package pkg3pc;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import ut.distcomp.framework.NetController;
 
 import java.io.*;
@@ -180,41 +186,32 @@ abstract public class Process {
             FileReader file = new FileReader(logFileName);
             BufferedReader reader = new BufferedReader(file);
             String line = null;
-
+            StringBuilder logFile = new StringBuilder();
             while ((line = reader.readLine()) != null) {
-                line = line.trim();
-                if (line.contains("INFO")) {
-                    String msg = line.substring(line.lastIndexOf(":"));
-                    LogMsgType logMsg = Enum.valueOf(LogMsgType.class, msg);
-                    switch (logMsg) {
-                        case COMMIT:
-                            currentState = ProcessState.Commited;
-                            //TODO need to set the command
-                            commit();
-                            break;
-                        case PRECOMMIT:
-                            currentState = ProcessState.Commitable;
-                            break;
-                        case ABORT:
-                            break;
-                        case NEWTX:
-                            break;
-                        case REC_VOTE_REQ:
-                            break;
-                        case VOTEYES:
-                            break;
-                        case START3PC:
-                            break;
-
-                    }
-
-                }
-
+                logFile = logFile.append(line).append(System.getProperty("line.separator"));
             }
-        } catch (IOException e) {
-            logger.log(Level.FINE, "Unable to read the Log File. Please Check!!" + e);
-        }
+            String fileContents=logFile.toString();
+            if (fileContents.contains(LogMsgType.START3PC.txt)) {
+                    //TODO should be done in Coordinator code base
+            } else {
+                if (fileContents.contains(LogMsgType.ABORT.txt)) {
+                    abort();
+                    return;
+                } else if (fileContents.contains(LogMsgType.COMMIT.txt)) {
+                    String txcmd = fileContents.substring(fileContents.lastIndexOf(LogMsgType.COMMIT.txt)).split(System.getProperty("line.separator"))[2];
+                    this.txCommand =txcmd.substring(txCommand.lastIndexOf(":"));
+                    commit();
+                    return;
 
+                } else if (fileContents.contains(LogMsgType.PRECOMMIT.txt)){
+                    //TODO Check with up set people
+                }
+            }
+
+        } catch (IOException e) {
+            logger.log(Level.FINE, "Unable to read the Log File. Recovery is not needed " + e);
+            return;
+        }
     }
 
     public void initTransaction() {
@@ -300,7 +297,7 @@ abstract public class Process {
             return;
         }
         logger.log(Level.INFO, LogMsgType.COMMIT.txt);
-
+        logger.log(Level.INFO,txCommand);
         currentState = ProcessState.Commited;
         String[] cmd = txCommand.split(TX_MSG_SEPARATOR);
         switch (playlistCommand.valueOf(cmd[0])) {

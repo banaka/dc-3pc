@@ -5,7 +5,6 @@
 package pkg3pc;
 
 /**
- *
  * @author bansal
  */
 public enum LogMsgType {
@@ -16,13 +15,12 @@ public enum LogMsgType {
     START3PC("START 3PC"),
     VOTEYES("SENT VOTE - YES"),
     REC_VOTE_REQ("RECIEVED VOTE REQ"),
-    NEWTX("NEW TX - WAITING FOR VOTE REQ")
-    ;
-    
+    NEWTX("NEW TX - WAITING FOR VOTE REQ");
+
     public String txt;
 
-     LogMsgType(String txt) {
+    LogMsgType(String txt) {
         this.txt = txt;
     }
-    
+
 }

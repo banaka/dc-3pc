@@ -1,7 +1,7 @@
- /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
+/*
+* To change this template, choose Tools | Templates
+* and open the template in the editor.
+*/
 package pkg3pc;
 
  import ut.distcomp.framework.NetController;
@@ -12,23 +12,21 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.logging.Level;
 
- /**
- *
+/**
  * @author bansal
  */
 public class ParticipantImpl extends Process implements Participant {
-    ParticipantImpl(NetController netController, int procNo, ProcessState stateToDie, Boolean voteInput, int msgCount){
+    ParticipantImpl(NetController netController, int procNo, ProcessState stateToDie, Boolean voteInput, int msgCount) {
         super(netController, procNo, stateToDie, voteInput, msgCount);
     }
     public int coordinator;
     public boolean interimCoodrinator = false;
     Map<Integer,MsgContent> interimStates;
     public void processStateRequest(){
-        
     }
-    
+
     @Override
-    public void precommit(){
+    public void precommit() {
         logger.info(LogMsgType.PRECOMMIT.txt);
     }
 
@@ -53,7 +51,7 @@ public class ParticipantImpl extends Process implements Participant {
                 try{
                     coordinator = fromProcId;
                     return processVoteRequest(msgFields[MessageGenerator.msgData], fromProcId);
-                } catch(ArrayIndexOutOfBoundsException e){
+                } catch (ArrayIndexOutOfBoundsException e) {
                     System.out.println("Please Send your transaction command with Vote Req!!");
                 }
                 break;
