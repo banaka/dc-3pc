@@ -30,13 +30,15 @@ public class ProcessBackground extends Thread {
             Set<Integer> oldUp = p.up;
             synchronized (p.up) {
                 Set<Integer> temp = new HashSet<Integer>();
-                temp.add(p.procNo);
                 Iterator<Integer> it = p.up.iterator();
                 while(it.hasNext()){
                     int proc = it.next();
                     if(!available(8080+proc))
                         temp.add(proc);
+//                    else if(!available(8080+proc))
+//                        temp.add(proc);
                 }
+                temp.add(p.procNo);
                 p.up = temp;
             }
 

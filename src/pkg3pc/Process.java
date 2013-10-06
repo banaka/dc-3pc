@@ -62,7 +62,7 @@ abstract public class Process {
         this.netController = netController;
         this.vote = voteInput;
         this.procNo = procNo;
-        timeout = config.delay;
+        timeout = config.timeout;
         playlist = new Hashtable<String, String>();
         processBackground = new ProcessBackground(this);
         processBackground.start();
