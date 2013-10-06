@@ -140,10 +140,7 @@ abstract public class Process {
     }
 
     public void sendStateRequestRes(int procId) {
-    }
-
-    public void CheckUpstatus() {
-
+        sendMsg(Enum.valueOf(MsgContent.class, currentState.msgState),"",procId);
     }
 
     public void updateUpSet(int procId) {
@@ -262,9 +259,6 @@ abstract public class Process {
                 case IAMALIVE:
                     updateUpSet(fromProcId);
                     break;
-                case STATE_REQ:
-                    sendStateRequestRes(fromProcId);
-                    break;
                 default:
                     shouldContinue = handleSpecificCommands(msgContent, msgFields);
             }
@@ -275,9 +269,8 @@ abstract public class Process {
     }
 
     public void abort() {
-        currentState = ProcessState.LoggedAbort;
         logger.log(Level.INFO, "ABORT :(");
-        currentState = ProcessState.Abort;
+        currentState = ProcessState.Aborted;
         //ToDo: Prepare for new transaction
         //TODO delete the Log file and create a new one         
     }
@@ -287,10 +280,8 @@ abstract public class Process {
     abstract public boolean handleSpecificCommands(MsgContent command, String[] msgFields);
 
     public void commit() {
-        currentState = ProcessState.LoggedCommit;
         logger.log(Level.INFO, "COMMIT");
-
-        currentState = ProcessState.Commit;
+        currentState = ProcessState.Commited;
         String[] cmd = txCommand.split(TX_MSG_SEPARATOR);
         switch (playlistCommand.valueOf(cmd[0])) {
             case ADD:

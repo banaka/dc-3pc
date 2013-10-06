@@ -10,36 +10,28 @@ package pkg3pc;
  */
 public enum ProcessState {
     //Partcipants States
-    WaitForVotReq,
-    //GotVoteRequest,
-    LoggedVote,
-    Uncertain,
-    Precommit,
-    SentACK,
+    WaitForVotReq(""),
+    Uncertain("UNCERTAIN"),
+    Commitable("COMMITABLE"),
+//    SentACK,
     
-    LoggedAbort,
-    Abort,
-    LoggedCommit,
-    Commit,
-    //Other states possible
-    GotStateReq,
-    
+//    LoggedAbort("ABORTED"),
+    Aborted("ABORTED"),
+//    LoggedCommit("COMMITED"),
+    Commited("COMMITED"),
+
     //Coordinator States
-//    Coordinator,
-    VoteReq,
-    VoteCounting,
-    DecidePreCommit,
-    DecideCommit,
-    DecideAbort,
-    
-    //New Coordinator States
-    interimCoordinator,
-    StateReq,
-    StateEvaluation
-    //The next states will be same as that of Coordinator 
-    //DecidePreCommit,
-    //DecideCommit,
-    //DecideAbort,
-    
-    ;    
+//    VoteReq(""),
+//    VoteCounting("")
+
+//    //New Coordinator States
+//    interimCoordinator,
+//    StateReq,
+//    StateEvaluation
+    ;
+    public String msgState;
+
+    ProcessState(String msgState) {
+        this.msgState = msgState;
+    }
 }

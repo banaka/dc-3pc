@@ -6,7 +6,9 @@ package pkg3pc;
 
 import ut.distcomp.framework.NetController;
 
-/**
+import java.util.Collections;
+
+ /**
  *
  * @author bansal
  */
@@ -14,7 +16,7 @@ public class ParticipantImpl extends Process implements Participant {
     ParticipantImpl(NetController netController, int procNo, ProcessState stateToDie, Boolean voteInput, int msgCount){
         super(netController, procNo, stateToDie, voteInput, msgCount);
     }
-
+    public int coordinator;
     public void processStateRequest(){
         
     }
@@ -28,9 +30,13 @@ public class ParticipantImpl extends Process implements Participant {
     public boolean handleSpecificCommands(MsgContent msgContent, String[] msgFields) {
         int fromProcId = Integer.parseInt(msgFields[MessageGenerator.processNo].trim());
         switch (msgContent) {
+            case STATE_REQ:
+                sendStateRequestRes(fromProcId);
+                break;
             case VOTE_REQ:
                 logMsg("RECIEVED VOTE REQ");
                 try{
+                    coordinator = fromProcId;
                     return processVoteRequest(msgFields[MessageGenerator.msgData], fromProcId);
                 } catch(ArrayIndexOutOfBoundsException e){
                     System.out.println("Please Send your transaction command with Vote Req!!");
@@ -39,7 +45,11 @@ public class ParticipantImpl extends Process implements Participant {
             case TIMEOUT:
                 switch(currentState) {
                     case Uncertain:
+                    case Commitable:
                         //Run Coordinator election
+                        up.remove(coordinator);
+                        coordinator = Collections.min(up);
+                        sendMsg(MsgContent.U_R_COORDINATOR,"",coordinator);
                         break;
                     //Forever wait if Wait VoteReq state
                     case WaitForVotReq:
@@ -58,7 +68,6 @@ public class ParticipantImpl extends Process implements Participant {
         txCommand = command;
         if (vote) {
             logMsg("SENT VOTE - "+vote);
-            currentState = ProcessState.LoggedVote;
             sendMsg(MsgContent.VoteYes, command, sendTo);
             currentState = ProcessState.Uncertain;
         } else {
