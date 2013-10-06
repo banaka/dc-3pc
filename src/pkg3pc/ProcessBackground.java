@@ -27,7 +27,7 @@ public class ProcessBackground extends Thread {
                 p.sendMsg(MsgContent.CHECKALIVE,"",it.next());
             p.up.clear();
             p.up.add(p.procNo);
-            p.sleeping_for(5000);
+            p.sleeping_for(p.aliveTimeout);
             p.logger.log(Level.WARNING, p.up.toString());
         }
     }

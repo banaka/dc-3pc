@@ -18,7 +18,9 @@ import java.util.logging.Logger;
 
 public class Config {
 
-	/**
+    public int aliveTimeout;
+
+    /**
 	 * Loads config from a file.  Optionally puts in 'procNum' if in file.
 	 * See sample file for syntax
 	 * @param filename
@@ -30,12 +32,16 @@ public class Config {
         prop.load(new FileInputStream(filename));
         numProcesses = Helper.loadInt(prop, "NumProcesses");
         timeout = 5000;
+        aliveTimeout = 2500;
         if(prop.getProperty("delay") != null) {
             delay = Helper.loadInt(prop, "delay");
-            timeout = 5*delay;
+            timeout = 4*delay;
+            aliveTimeout = 2*delay;
         }
         if(prop.getProperty("timeout") != null)
             timeout = Helper.loadInt(prop, "timeout");
+       if(prop.getProperty("timeout") != null)
+            aliveTimeout = Helper.loadInt(prop, "timeout")/2;
         command = prop.getProperty("command").trim();
         clean = prop.getProperty("clean");
         logger = Logger.getLogger("NetFramework");

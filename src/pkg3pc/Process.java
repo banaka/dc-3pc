@@ -20,11 +20,6 @@ import java.util.logging.SimpleFormatter;
 abstract public class Process {
 
     public final static String TX_MSG_SEPARATOR = "\\$";
-    //FORMAT FOR Transaction
-    //ADD$Song$URL
-    //EDIT$SONGOLD$URLOLD$NEWSONG$NEWURL
-    //DELETE$SONG$URL
-    //Set to maintain the up set
     Set<Integer> up = new HashSet<Integer>();
     ProcessState currentState;
     ProcessState endState;
@@ -40,6 +35,7 @@ abstract public class Process {
     String logFileName;
     String playListInstructions;
     public Logger logger;
+    public int aliveTimeout;
 
     public enum playlistCommand {
 
@@ -71,6 +67,8 @@ abstract public class Process {
         playListInstructions = "PlayListInstruction" + procNo + ".txt";
         logger = Logger.getLogger("MyLog");
         logger.setLevel(Level.CONFIG);
+
+        aliveTimeout = config.aliveTimeout;
 
         try {
             FileHandler fh = new FileHandler(logFileName, true);
@@ -132,7 +130,7 @@ abstract public class Process {
 
     public void updateUpSet(int procId) {
         up.add(procId);
-        logger.log(Level.WARNING,up.toString());
+        logger.log(Level.WARNING, up.toString());
     }
 
     public void refreshState() {
