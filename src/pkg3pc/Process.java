@@ -71,6 +71,7 @@ abstract public class Process {
 
         //When starting the process initiate its playlist based of the values present in the playlist instructions
         recoverPlayList();
+        recoverIfNeeded();
     }
 
     public void sendMsgToAll(MsgContent msgContent) {
@@ -212,7 +213,10 @@ abstract public class Process {
                         abort();
                         return;
                     } else if (matcher.contains(LogMsgType.PRECOMMIT.txt)) {
-                        //TODO Check with up set people
+                        //send message to all and proceed based of the reply
+                        //do not work until we get response form someone
+                        sendMsg(MsgContent.STATUS_REQ,"",up.iterator().next());
+                        //Wait for response otherwise go to some other process
                     } else if (matcher.contains(LogMsgType.COMMIT.txt)) {
                         String txcmd = logFile.get(i + 2);
                         this.txCommand = txcmd.substring(txCommand.lastIndexOf(":"));
@@ -327,6 +331,7 @@ abstract public class Process {
             return;
         }
         logger.log(Level.INFO, LogMsgType.PRECOMMIT.txt);
+
         currentState = ProcessState.Commitable;
     }
 

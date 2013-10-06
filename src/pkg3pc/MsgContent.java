@@ -15,6 +15,7 @@ public enum MsgContent {
     VOTE_REQ("VOTE_REQ"), //should include partcipant list 
     STATE_REQ("STATE_REQ"), //can include up list
     PRECOMMIT("PRECOMMIT"),
+    STATUS_REQ("STATUS_REQUEST"),
     //Other messages 
     U_R_COORDINATOR("U_R_COORDINATOR"),
     //Vote responses
