@@ -50,6 +50,7 @@ public class Config {
 
         logger = Logger.getLogger("NetFramework");
         logger.setLevel(Level.FINER);
+        logger.setUseParentHandlers(false);
         Handler consoleHandler = null;
         for (Handler handler : logger.getHandlers()) {
             if (handler instanceof ConsoleHandler) {
@@ -62,7 +63,7 @@ public class Config {
             consoleHandler = new ConsoleHandler();
             logger.addHandler(consoleHandler);
         }
-       consoleHandler.setLevel(Level.FINER);
+       consoleHandler.setLevel(Level.CONFIG);
 
 //        Handler handler = new FileHandler();
 //        handler.setFormatter(new CustomFormatter());
