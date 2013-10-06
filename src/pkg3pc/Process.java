@@ -4,18 +4,12 @@
  */
 package pkg3pc;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import ut.distcomp.framework.NetController;
+
+import java.io.*;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
-import ut.distcomp.framework.NetController;
-
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Set;
@@ -99,18 +93,9 @@ abstract public class Process {
             e.printStackTrace();
         }
 
-
+        up.add(1-procNo);
     }
 
-//    public void run() {
-//        try {
-//            // Comment is only for debugging purposes...
-//            //this.sendMsg(MsgContent.CHECKALIVE, "", 1);
-//            refreshState();
-//        } catch (InterruptedException ex) {
-//            Logger.getLogger(Process.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-//    }
     void changeState(ProcessState ps) {
         if (ps == endState) {
             System.exit(0);
@@ -142,12 +127,6 @@ abstract public class Process {
         playlist.put(newName, newUrl);
     }
 
-    public void waitUntillTimeout() {
-    }
-
-    public void waitForInitialVoteReq() {
-    }
-
     public void sendMsg(MsgContent msgCont, String data, int sendTo) {
         String outputMsg = MessageGenerator.genMsg(msgCont, data, procNo);
         this.netController.sendMsg(sendTo, outputMsg);
@@ -164,10 +143,11 @@ abstract public class Process {
     }
 
     public void CheckUpstatus() {
+
     }
 
     public void updateUpSet(int procId) {
-        //up.contains(procId);
+        up.add(procId);
     }
 
     public void refreshState() {
@@ -275,6 +255,15 @@ abstract public class Process {
                 case ABORT:
                     abort();
                     shouldContinue = false;
+                    break;
+                case CHECKALIVE:
+                    sendMsg(MsgContent.IAMALIVE, "", fromProcId);
+                    break;
+                case IAMALIVE:
+                    updateUpSet(fromProcId);
+                    break;
+                case STATE_REQ:
+                    sendStateRequestRes(fromProcId);
                     break;
                 default:
                     shouldContinue = handleSpecificCommands(msgContent, msgFields);
