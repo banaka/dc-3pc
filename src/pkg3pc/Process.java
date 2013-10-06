@@ -66,15 +66,13 @@ abstract public class Process {
         totalMessageToReceive = msgCount;
         logFileName = "Log" + procNo + ".log";
         playListInstructions = "PlayListInstruction" + procNo + ".txt";
-        //First recover the processes
-        recoverPlayList();
-        recoverIfNeeded();
-        //Then set the logger
         setLogger();
 
         aliveTimeout = config.aliveTimeout;
 
         //When starting the process initiate its playlist based of the values present in the playlist instructions
+        recoverPlayList();
+        recoverIfNeeded();
     }
 
     public void sendMsgToAll(MsgContent msgContent) {
@@ -221,8 +219,12 @@ abstract public class Process {
                     if (!deriveredUpset && matcher.contains((LogMsgType.UPSET.txt))) {
                         getUpset(matcher);
                         deriveredUpset = true;
-                        if (!notDecided)
+
+                        if(notDecided)
+                        {
+                            System.out.println("GOT up and need to decide ");
                             break;
+                        }
                     }
                     if (matcher.contains(LogMsgType.NEWTX.txt)) {
                         //The process is sure that COMMIT has not taken place so the process can again start waiting
@@ -233,8 +235,10 @@ abstract public class Process {
                     } else if (matcher.contains(LogMsgType.PRECOMMIT.txt)) {
                         currentState = ProcessState.Commitable;
                         notDecided = true;
-                        if (deriveredUpset)
+                        if (deriveredUpset){
+                            System.out.println("Know need to decide but yet to get UP");
                             break;
+                        }
                         else continue;
                     } else if (matcher.contains(LogMsgType.COMMIT.txt)) {
                         String txcmd = logFile.get(i + 2);
@@ -253,12 +257,14 @@ abstract public class Process {
             }
             if (notDecided) {//
                 if (up == null || up.size() == 0) {
+                    System.out.println("GOT up and need to decide ");
                     //TODO :ERROR as we need the upset to go further the process cannot recover
                 }
                 Iterator<Integer> it = up.iterator();
                 while (it.hasNext()) {
-                    sendMsg(MsgContent.STATUS_REQ, "", up.iterator().next());
+                    sendMsg(MsgContent.STATUS_REQ, "", it.next());
                 }
+
 
                 //do not work until we get response form someone
                 //sendMsg(MsgContent.STATUS_REQ, "", up.iterator().next());
@@ -273,9 +279,9 @@ abstract public class Process {
 
     public void getUpset(String str) {
         if (str.contains((LogMsgType.UPSET.txt))) {
-            String[] set = str.substring(str.lastIndexOf("["), str.lastIndexOf("]")).split(",");
+            String[] set = str.substring(str.lastIndexOf("[")+1, str.lastIndexOf("]")).split(",");
             for (String j : set) {
-                up.add(Integer.parseInt(j));
+                up.add(Integer.parseInt(j.trim()));
             }
         }
     }
