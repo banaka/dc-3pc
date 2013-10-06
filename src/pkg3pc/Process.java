@@ -252,6 +252,8 @@ abstract public class Process {
 
             if (counter >= timeout) {
                 msg = procNo + ";TIMEOUT";
+                globalCounter.value = 0;
+                counter = 0;
                 break;
             }
         }
@@ -269,10 +271,10 @@ abstract public class Process {
 
     public void startListening(int globalTimeout) {
         GlobalCounter globalCounter = new GlobalCounter(0);
-        String lastMsg = "";
-        while (globalTimeout == 0 || globalCounter.value < globalTimeout || isBackground(lastMsg)) {
+//        String lastMsg = "";
+        while (globalTimeout == 0 || globalCounter.value < globalTimeout) {
             String msg = waitTillTimeoutForMessage(globalCounter, globalTimeout);
-            lastMsg = msg;
+//            lastMsg = msg;
             String[] msgFields = msg.split(MsgGen.MSG_FIELD_SEPARATOR);
             int fromProcId = Integer.parseInt(msgFields[MsgGen.processNo].trim());
             if (fromProcId != procNo) {
