@@ -66,6 +66,11 @@ public class NetController {
      */
     public synchronized boolean sendMsg(int process, String msg) {
         try {
+            Thread.sleep(this.config.delay*1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        try {
             if (outSockets[process] == null) {
                 initOutgoingConn(process);
             }

@@ -25,10 +25,12 @@ public class Config {
 	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
-	public Config(String filename, int procNum) throws FileNotFoundException, IOException {
+	public Config(String filename, int procNum) throws IOException {
         Properties prop = new Properties();
         prop.load(new FileInputStream(filename));
         numProcesses = Helper.loadInt(prop, "NumProcesses");
+        if(prop.getProperty("delay") != null)
+            delay = Helper.loadInt(prop, "delay");
         command = prop.getProperty("command").trim();
 
         logger = Logger.getLogger("NetFramework");
@@ -47,6 +49,8 @@ public class Config {
 	 */
 	public Config() {
 	}
+
+    public int delay;
     public String command;
 	/**
 	 * Array of addresses of other hosts.  All hosts should have identical info here.

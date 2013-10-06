@@ -4,12 +4,6 @@
  */
 package pkg3pc;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
 import ut.distcomp.framework.NetController;
 
 import java.io.*;
@@ -131,8 +125,8 @@ abstract public class Process {
 
     public void sendMsg(MsgContent msgCont, String data, int sendTo) {
         String outputMsg = MessageGenerator.genMsg(msgCont, data, procNo);
-        this.netController.sendMsg(sendTo, outputMsg);
         logger.log(Level.CONFIG, "Sent msg " + outputMsg + " to " + sendTo);
+        this.netController.sendMsg(sendTo, outputMsg);
     }
 
     public void sendStateRequestRes(int procId) {
