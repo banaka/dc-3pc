@@ -73,6 +73,14 @@ abstract public class Process {
         recoverPlayList();
     }
 
+    public void sendMsgToAll(MsgContent msgContent) {
+        synchronized (up) {
+            Iterator<Integer> it = up.iterator();
+            while (it.hasNext())
+                sendMsg(msgContent, "", it.next());
+        }
+    }
+
     private void setLogger() {
         logger = Logger.getLogger("MyLog");
         logger.setUseParentHandlers(false);
@@ -238,15 +246,16 @@ abstract public class Process {
     public String waitTillTimeoutForMessage(GlobalCounter globalCounter, int globalTimeout) {
         String msg;
         int counter = globalCounter.value;
-        while ((msg = this.netController.getReceivedMsgMain()) == null || isBackground(msg)) {
+        while ((msg = this.netController.getReceivedMsgMain()) == null) {
+            sleeping_for(10);
+            counter += 10;
+
             if (counter >= timeout) {
                 msg = procNo + ";TIMEOUT";
                 break;
             }
-            sleeping_for(10);
-            counter += 10;
         }
-        if (globalTimeout != 0) {
+        if (globalTimeout != 0 || isBackground(msg)) {
             globalCounter.value += counter;
         }
         return msg;
@@ -260,8 +269,10 @@ abstract public class Process {
 
     public void startListening(int globalTimeout) {
         GlobalCounter globalCounter = new GlobalCounter(0);
-        while (globalTimeout == 0 || globalCounter.value < globalTimeout) {
+        String lastMsg = "";
+        while (globalTimeout == 0 || globalCounter.value < globalTimeout || isBackground(lastMsg)) {
             String msg = waitTillTimeoutForMessage(globalCounter, globalTimeout);
+            lastMsg = msg;
             String[] msgFields = msg.split(MsgGen.MSG_FIELD_SEPARATOR);
             int fromProcId = Integer.parseInt(msgFields[MsgGen.processNo].trim());
             if (fromProcId != procNo) {

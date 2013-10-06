@@ -100,8 +100,13 @@ public class ParticipantImpl extends Process implements Participant {
                     case Uncertain:
                     case Commitable:
                         //Run Coordinator election
-                        up.remove(coordinator);
-                        coordinator = Collections.min(up);
+                        synchronized (up) {
+                            System.out.println(up);
+                            up.remove(coordinator);
+                            System.out.println(up);
+                            coordinator = Collections.min(up);
+                            System.out.println(up);
+                        }
                         sendMsg(MsgContent.U_R_COORDINATOR, "", coordinator);
                         break;
                     //Forever wait if Wait VoteReq state
@@ -115,12 +120,6 @@ public class ParticipantImpl extends Process implements Participant {
                 logger.log(Level.WARNING, "Not expected ::" + msgContent.content);
         }
         return true;
-    }
-
-    private void sendMsgToAll(MsgContent msgContent) {
-        Iterator<Integer> it = up.iterator();
-        while (it.hasNext())
-            sendMsg(msgContent, "", it.next());
     }
 
     private void takeDecision() {
@@ -141,8 +140,10 @@ public class ParticipantImpl extends Process implements Participant {
     }
 
     private void updateCoordinator(int fromProcId) {
-        for (int i = coordinator; i < fromProcId; i++)
-            up.remove(i);
+        synchronized (up) {
+            for (int i = coordinator; i < fromProcId; i++)
+                up.remove(i);
+        }
         coordinator = fromProcId;
     }
 

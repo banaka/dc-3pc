@@ -4,7 +4,6 @@
  */
 package pkg3pc;
 
-import java.util.Iterator;
 import java.util.logging.Level;
 
 /**
@@ -21,16 +20,17 @@ public class ProcessBackground extends Thread {
 
     public void run() {
         while (true) {
-            Iterator<Integer> it = p.up.iterator();
-            while (it.hasNext())
-                p.sendMsg(MsgContent.CHECKALIVE, "", it.next());
-            p.upReply.clear();
+            p.sendMsgToAll(MsgContent.CHECKALIVE);
+
+            synchronized (p.upReply) {
+                p.upReply.clear();
+            }
             p.sleeping_for(p.aliveTimeout);
             synchronized (p.upReply) {
                 p.upReply.add(p.procNo);
             }
-            p.logger.log(Level.CONFIG, "Old UpSet:" + p.up.toString() + " Current State :" + p.currentState);
-            p.logger.log(Level.INFO, LogMsgType.UPSET.txt + "  " + p.upReply.toString());
+            p.logger.log(Level.CONFIG, "Old UpSet:" + p.up + " Current State :" + p.currentState);
+            p.logger.log(Level.INFO, LogMsgType.UPSET.txt + "  " + p.upReply);
             synchronized (p.up) {
                 p.up = p.upReply;
             }
