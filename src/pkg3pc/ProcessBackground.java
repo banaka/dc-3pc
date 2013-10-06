@@ -8,7 +8,6 @@ import java.util.Iterator;
 import java.util.logging.Level;
 
 /**
- *
  * @author bansal
  */
 public class ProcessBackground extends Thread {
@@ -21,13 +20,14 @@ public class ProcessBackground extends Thread {
 
 
     public void run() {
-        while(true) {
+        while (true) {
             Iterator<Integer> it = p.up.iterator();
-            while(it.hasNext())
-                p.sendMsg(MsgContent.CHECKALIVE,"",it.next());
+            while (it.hasNext())
+                p.sendMsg(MsgContent.CHECKALIVE, "", it.next());
             p.sleeping_for(p.aliveTimeout);
             p.upReply.add(p.procNo);
-            p.logger.log(Level.CONFIG, "Old UpSet:"+ p.up.toString() + "New UpSet:"+ p.upReply.toString() +" Current State :"+p.currentState);
+            p.logger.log(Level.CONFIG, "Old UpSet:" + p.up.toString() + " Current State :" + p.currentState);
+            p.logger.log(Level.INFO, LogMsgType.UPSET + "  " + p.upReply.toString());
             p.up = p.upReply;
         }
     }
