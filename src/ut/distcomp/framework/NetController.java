@@ -47,8 +47,8 @@ public class NetController {
         }
 
         outSockets[proc] = new OutgoingSock(new Socket(config.addresses[proc], config.ports[proc]));
-        config.logger.info(String.format("Server %d: Socket to %d established",
-                config.procNum, proc));
+//        config.logger.info(String.format("Server %d: Socket to %d established",
+//                config.procNum, proc));
     }
 
     /**
@@ -63,7 +63,7 @@ public class NetController {
      */
     public synchronized boolean sendMsg(int process, String msg) {
         try {
-            Thread.sleep(this.config.delay*1000);
+            Thread.sleep(this.config.delay);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -84,16 +84,16 @@ public class NetController {
                         outSockets[process].cleanShutdown();
                         outSockets[process] = null;
                     }
-                    config.logger.info(String.format("Server %d: Msg to %d failed.",
-                            config.procNum, process));
+                    config.logger.info(String.format("Server %d: Msg <%s> to %d failed.",
+                            config.procNum, msg, process));
                     config.logger.log(Level.FINE, String.format("Server %d: Socket to %d error",
                             config.procNum, process), e);
                     return false;
                 }
                 return true;
             }
-            config.logger.info(String.format("Server %d: Msg to %d failed.",
-                    config.procNum, process));
+            config.logger.warning(String.format("Server %d: Msg <%s> to %d failed.",
+                    config.procNum, msg, process));
             config.logger.log(Level.FINE, String.format("Server %d: Socket to %d error",
                     config.procNum, process), e);
             return false;

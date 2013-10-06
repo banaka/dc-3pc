@@ -66,7 +66,6 @@ public class CoordinatorImpl extends Process implements Coordinator {
                     shouldContinue = false;
                 break;
             case TIMEOUT:
-                logger.log(Level.CONFIG, "TIMEOUT");
                 if (currentState == ProcessState.VoteReq)
                     send_abort();
                 if (currentState == ProcessState.Uncertain)
@@ -80,7 +79,6 @@ public class CoordinatorImpl extends Process implements Coordinator {
     }
 
     public void send_abort() {
-        logger.info(LogMsgType.ABORT.txt + " Before sending TO ALL");
         for (int i = 0; i < noOfProcesses; i++)
             if (("VoteYes").equals(this.replySet.get(i)))
                 sendMsg(MsgContent.ABORT, "", i);

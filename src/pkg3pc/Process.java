@@ -9,10 +9,7 @@ import ut.distcomp.framework.NetController;
 
 import java.io.*;
 import java.util.*;
-import java.util.logging.FileHandler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
+import java.util.logging.*;
 
 /**
  * @author bansal
@@ -22,7 +19,6 @@ abstract public class Process {
     public final static String TX_MSG_SEPARATOR = "\\$";
     Set<Integer> up = new HashSet<Integer>();
     ProcessState currentState;
-    ProcessState endState;
     int procNo;
     int timeout;
     NetController netController;
@@ -65,8 +61,7 @@ abstract public class Process {
 
         logFileName = "Log" + procNo + ".log";
         playListInstructions = "PlayListInstruction" + procNo + ".txt";
-        logger = Logger.getLogger("MyLog");
-        logger.setLevel(Level.CONFIG);
+        setLogger();
 
         aliveTimeout = config.aliveTimeout;
 
@@ -87,12 +82,22 @@ abstract public class Process {
 
     }
 
-    void changeState(ProcessState ps) {
-        if (ps == endState) {
-            System.exit(0);
-        } else {
-            currentState = ps;
+    private void setLogger() {
+        logger = Logger.getLogger("MyLog");
+        logger.setLevel(Level.FINER);
+        Handler consoleHandler = null;
+        for (Handler handler : logger.getHandlers()) {
+            if (handler instanceof ConsoleHandler) {
+                consoleHandler = handler;
+                break;
+            }
         }
+        if (consoleHandler == null) {
+            //there was no console handler found, create a new one
+            consoleHandler = new ConsoleHandler();
+            logger.addHandler(consoleHandler);
+        }
+        consoleHandler.setLevel(Level.FINER);
     }
 
     void updateMessagesReceived() {
@@ -130,7 +135,7 @@ abstract public class Process {
 
     public void updateUpSet(int procId) {
         up.add(procId);
-        logger.log(Level.WARNING, up.toString());
+//        logger.log(Level.WARNING, up.toString());
     }
 
     public void refreshState() {
@@ -246,13 +251,14 @@ abstract public class Process {
         while (globalTimeout == 0 || globalCounter.value < globalTimeout) {
             String msg = waitTillTimeoutForMessage(globalCounter, globalTimeout);
             String[] msgFields = msg.split(MsgGen.MSG_FIELD_SEPARATOR);
-            logger.log(Level.CONFIG, "Received a message!!! - " + msg);
             int fromProcId = Integer.parseInt(msgFields[MsgGen.processNo].trim());
             if (fromProcId != procNo) {
                 updateMessagesReceived();
             }
             MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFields[MsgGen.msgContent]);
             boolean shouldContinue = true;
+            logger.log(Level.CONFIG, msgContent.content+";current state: "+currentState);
+
             switch (msgContent) {
                 case COMMIT:
                     commit();

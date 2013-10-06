@@ -14,6 +14,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Properties;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Config {
@@ -46,6 +49,21 @@ public class Config {
         clean = prop.getProperty("clean");
 
         logger = Logger.getLogger("NetFramework");
+        logger.setLevel(Level.FINER);
+        Handler consoleHandler = null;
+        for (Handler handler : logger.getHandlers()) {
+            if (handler instanceof ConsoleHandler) {
+                consoleHandler = handler;
+                break;
+            }
+        }
+        if (consoleHandler == null) {
+            //there was no console handler found, create a new one
+            consoleHandler = new ConsoleHandler();
+            logger.addHandler(consoleHandler);
+        }
+       consoleHandler.setLevel(Level.FINER);
+
 //        Handler handler = new FileHandler();
 //        handler.setFormatter(new CustomFormatter());
 //        logger.addHandler(handler);

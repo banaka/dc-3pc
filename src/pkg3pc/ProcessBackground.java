@@ -5,7 +5,6 @@
 package pkg3pc;
 
 import java.util.Iterator;
-import java.util.logging.Level;
 
 /**
  *
@@ -28,7 +27,7 @@ public class ProcessBackground extends Thread {
             p.up.clear();
             p.up.add(p.procNo);
             p.sleeping_for(p.aliveTimeout);
-            p.logger.log(Level.WARNING, p.up.toString());
+//            p.logger.log(Level.WARNING, p.up.toString());
         }
     }
 }
