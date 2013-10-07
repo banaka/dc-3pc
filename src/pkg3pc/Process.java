@@ -287,11 +287,11 @@ abstract public class Process {
                     return false;
                 } else if (matcher.contains(LogMsgType.PRECOMMIT.txt)) {
                     currentState = ProcessState.Commitable;
-                    this.txCommand = matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[MsgGen.msgData];
+                    this.txCommand = matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[1];
                     txNo = Integer.parseInt(this.txCommand.split(TX_MSG_SEPARATOR, 2)[0].trim());
                     return true;
                 } else if (matcher.contains(LogMsgType.COMMIT.txt)) {
-                    this.txCommand = matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[MsgGen.msgData];
+                    this.txCommand = matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[1];
                     txNo = Integer.parseInt(this.txCommand.split(TX_MSG_SEPARATOR, 2)[0].trim());
                     currentState = ProcessState.Commitable;
                     commit();
@@ -299,7 +299,7 @@ abstract public class Process {
                 } else if (matcher.contains(LogMsgType.VOTEYES.txt)) {
                     currentState = ProcessState.Uncertain;
                     if(!wasCoordinator) {
-                        this.txCommand = matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[MsgGen.msgData];
+                        this.txCommand = matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[1];
                         txNo = Integer.parseInt(this.txCommand.split(TX_MSG_SEPARATOR, 2)[0].trim());
                         return true;
                     } else
