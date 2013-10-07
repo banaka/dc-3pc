@@ -15,13 +15,16 @@ public class Main {
         Boolean vote = true;
         int msgCount = 0;
         int pid = Integer.parseInt(args[0]);
-        if (config.clean != null)
+        if (config.clean != null) {
             Helper.clearLogs("Log" + pid + ".log");
+            Helper.clearLogs("PlayListInstruction" + pid + ".txt");
+        }
         if (args.length > 1)
             vote = Boolean.parseBoolean(args[1]);
         if( args.length > 2)
             msgCount = Integer.parseInt(args[2]);
         if (pid == 0) {
+            config.updateTx();
             p = new CoordinatorImpl(n, pid, vote, msgCount, config);
         } else {
             p = new ParticipantImpl(n, pid, vote, msgCount, config);

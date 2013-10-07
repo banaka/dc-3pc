@@ -159,7 +159,7 @@ public class ParticipantImpl extends Process implements Participant {
     public boolean processVoteRequest(String command, int sendTo) {
         txCommand = command;
         if (vote) {
-            logger.info(LogMsgType.VOTEYES.txt);
+            logger.info(LogMsgType.VOTEYES.txt + MsgGen.MSG_FIELD_SEPARATOR + txCommand);
             sendMsg(MsgContent.VoteYes, command, sendTo);
             currentState = ProcessState.Uncertain;
         } else {

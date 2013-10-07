@@ -29,7 +29,10 @@ abstract public class Process {
     NetController netController;
     Hashtable<String, String> playlist;
     String txCommand;
+
     public int txNo;
+    Set<Integer> txStates = new HashSet<Integer>();
+
     ProcessBackground processBackground;
     boolean vote;
     int totalMessageReceived;
@@ -71,6 +74,7 @@ abstract public class Process {
         playListInstructions = "PlayListInstruction" + procNo + ".txt";
         setLogger();
         this.config = config;
+        txNo = config.txNo;
         aliveTimeout = config.aliveTimeout;
 
 //        for (int i = 0; i < config.numProcesses; i++) {
@@ -86,7 +90,7 @@ abstract public class Process {
         } else {
             recovered = false;
         }
-
+        processBackground.start();
     }
 
     public void sendMsgToN(MsgContent msgContent) {
@@ -200,7 +204,9 @@ abstract public class Process {
 
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
-                String[] cmd = line.split(TX_MSG_SEPARATOR);
+                String[] txDetail = line.split(MsgGen.MSG_FIELD_SEPARATOR);
+                txStates.add(Integer.parseInt(txDetail[0]));
+                String[] cmd = txDetail[1].split(TX_MSG_SEPARATOR);
                 switch (playlistCommand.valueOf(cmd[0])) {
                     case ADD:
                         processAddToPlaylist(cmd[1], cmd[2]);
@@ -237,13 +243,16 @@ abstract public class Process {
             while ((line = reader.readLine()) != null) {
                 logFile.add(line);
             }
-//            recovered = true;              //WHYYY ALWAYS TRUE?
+            if(logFile.isEmpty())
+                return false;
+//           recovered = true;              //WHYYY ALWAYS TRUE?
        return extractFromLogFile(logFile);
         } catch (IOException e) {
             logger.log(Level.FINE, "Unable to read the Log File. Recovery is not needed " + e);
-        } finally {
-            this.processBackground.start();
         }
+//        finally {
+//            this.processBackground.start();
+//        }
         return false;
     }
 
@@ -351,6 +360,7 @@ abstract public class Process {
                 recoverUP.add(Integer.parseInt(j.trim()));
             }
         }
+        recoverUP.add(procNo);
     }
 
     public void initTransaction() {
@@ -396,10 +406,8 @@ abstract public class Process {
 
     public void startListening(int globalTimeout) {
         GlobalCounter globalCounter = new GlobalCounter(0);
-//        String lastMsg = "";
         while (globalTimeout == 0 || globalCounter.value < globalTimeout) {
             String msg = waitTillTimeoutForMessage(globalCounter, globalTimeout);
-//            lastMsg = msg;
             String[] msgFields = msg.split(MsgGen.MSG_FIELD_SEPARATOR);
             int fromProcId = Integer.parseInt(msgFields[MsgGen.processNo].trim());
             if (fromProcId != procNo) {
@@ -423,7 +431,15 @@ abstract public class Process {
                     break;
                 case STATUS_REQ:
                     //Only sent by recovering nodes...
-                    sendMsg(Enum.valueOf(MsgContent.class, currentState.msgState), txCommand, fromProcId);
+                    ProcessState p = currentState;
+                    int askedForTx = Integer.parseInt(msgFields[MsgGen.msgData].trim());
+                    if(askedForTx != txNo) {
+                        if(txStates.contains(txCommand))
+                            p = ProcessState.Commited;
+                        else
+                            p = ProcessState.Aborted;
+                    }
+                    sendMsg(Enum.valueOf(MsgContent.class, p.msgState), txCommand, fromProcId);
                     //sendStatusRequestRes(fromProcId);
                     break;
 //                case CHECKALIVE:
@@ -455,7 +471,10 @@ abstract public class Process {
             MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFields[MsgGen.msgContent]);
 
             logger.log(Level.CONFIG, msgContent.content + ";Recovery Message From :" + fromProcId + ";current state: " + currentState);
-
+            //I will come out of this loop only if
+            //I will commit or abort as per other processes say on the txNo i gave
+            //If they say uncertain, that means they are also on the same Tx right now
+            //So no need to check for TxNo with the received message.
             switch (msgContent) {
                 case COMMITED:
                     commit();
@@ -546,7 +565,7 @@ abstract public class Process {
         try {
             FileWriter fileWriter = new FileWriter(playListInstructions, true);
             BufferedWriter bufferFileWriter = new BufferedWriter(fileWriter);
-            fileWriter.append(txCommand + "\n");
+            fileWriter.append(txNo + MsgGen.MSG_FIELD_SEPARATOR + txCommand + "\n");
             bufferFileWriter.close();
 
         } catch (IOException e) {

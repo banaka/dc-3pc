@@ -11,6 +11,7 @@ import pkg3pc.Helper;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Properties;
@@ -21,6 +22,7 @@ import java.util.logging.Logger;
 
 public class Config {
 
+    public int txNo;
     public int aliveTimeout;
 
     /**
@@ -47,6 +49,7 @@ public class Config {
             aliveTimeout = Helper.loadInt(prop, "timeout") / 2;
         command = prop.getProperty("command").trim();
         clean = prop.getProperty("clean");
+        txNo = Helper.loadInt(prop, "txNo");
 
         logger = Logger.getLogger("NetFramework");
         logger.setLevel(Level.FINER);
@@ -114,4 +117,21 @@ public class Config {
      * Verbosity can be restricted by raising level to WARN
      */
     public Logger logger;
+
+    public void updateTx() {
+        try {
+            FileInputStream in = new FileInputStream("First.properties");
+            Properties prop = new Properties();
+            prop.load(in);
+            in.close();
+
+            FileOutputStream out = new FileOutputStream("config.properties");
+            prop = new Properties();
+            prop.setProperty("txNo", Integer.toString(txNo + 1));
+            prop.store(out, null);
+            out.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }

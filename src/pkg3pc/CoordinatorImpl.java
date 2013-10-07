@@ -111,6 +111,8 @@ public class CoordinatorImpl extends Process implements Coordinator {
     public void sendVoteRequests() {
         this.currentState = ProcessState.VoteReq;
         String txAppendNodes = appendParticipants(txCommand);
+        if(vote == true)
+            logger.info(LogMsgType.VOTEYES.txt + MsgGen.MSG_FIELD_SEPARATOR + txCommand);
         //Need to do this because the up set gets over written even before these messages are sent out
         for (int i = 0; i < noOfProcesses; i++) {
             if (i != procNo)
