@@ -98,10 +98,9 @@ abstract public class Process {
     public void sendMsgToAll(MsgContent msgContent) {
         synchronized (up) {
             Iterator<Integer> it = up.iterator();
-            while (it.hasNext())
-            {
+            while (it.hasNext()) {
                 int n = it.next();
-                if (n!= this.procNo)
+                if (n != this.procNo)
                     sendMsg(msgContent, "", n);
             }
         }
@@ -155,13 +154,13 @@ abstract public class Process {
 
     void processDelFromPlaylist(String name, String url) {
         logger.log(Level.CONFIG, "Deleting item of the playlist - " + name + " " + playlist.get(name));
-        if (playlist.get(name)!=null)
+        if (playlist.get(name) != null)
             playlist.remove(playlist.get(name));
     }
 
     void processEditPlaylist(String name, String url, String newName, String newUrl) {
         logger.log(Level.CONFIG, "Editing item of the playlist - " + name + " " + url + " too " + newUrl + " " + newName);
-        if (playlist.get(name)!=null)
+        if (playlist.get(name) != null)
             playlist.remove(playlist.get(name));
         playlist.put(newName, newUrl);
     }
@@ -191,6 +190,7 @@ abstract public class Process {
             initTransaction();
         }
     }
+
     public void recoverPlayList() {
         try {
             FileReader file = new FileReader(playListInstructions);
@@ -199,7 +199,7 @@ abstract public class Process {
 
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
-                String[] txDetail = line.split(TX_MSG_SEPARATOR,2);
+                String[] txDetail = line.split(TX_MSG_SEPARATOR, 2);
                 txStates.add(Integer.parseInt(txDetail[0]));
 
                 String[] cmd = txDetail[1].split(TX_MSG_SEPARATOR);
@@ -227,7 +227,9 @@ abstract public class Process {
         }
     }
 
-    /*************** RECOVERY STUFF STARTS ***************************************/
+    /**
+     * ************ RECOVERY STUFF STARTS **************************************
+     */
     private void recoverFromLogs() {
         if (isRecoveryNeeded()) {
             recovered = true;
@@ -303,7 +305,7 @@ abstract public class Process {
                     return false;
                 } else if (matcher.contains(LogMsgType.VOTEYES.txt)) {
                     currentState = ProcessState.Uncertain;
-                    if(!wasCoordinator) {
+                    if (!wasCoordinator) {
                         this.txCommand = matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[1];
                         txNo = Integer.parseInt(this.txCommand.split(TX_MSG_SEPARATOR, 2)[0].trim());
                         return true;
@@ -344,6 +346,7 @@ abstract public class Process {
         }
 
     }
+
     public void startRecoverWaiting() {
         Set<Integer> receivedStatuses = new HashSet<Integer>();
 //        Map<Integer, MsgContent> inputStates = new HashMap<Integer, MsgContent>();
@@ -390,6 +393,7 @@ abstract public class Process {
             }
         }
     }
+
     public void getRecoverUpset(String str) {
         if (str.contains((LogMsgType.UPSET.txt))) {
             String[] set = str.substring(str.lastIndexOf("[") + 1, str.lastIndexOf("]")).split(",");
@@ -407,7 +411,7 @@ abstract public class Process {
             sleeping_for(10);
             counter += 10;
 
-            if(counter >= timeout){
+            if (counter >= timeout) {
                 Iterator<Integer> it = recoverUP.iterator();
                 while (it.hasNext()) {
                     Integer i = it.next();
@@ -420,7 +424,9 @@ abstract public class Process {
         return msg;
     }
 
-    /******************* RECOVERY STUFF ENDS ********************************/
+    /**
+     * **************** RECOVERY STUFF ENDS *******************************
+     */
 
     public void initTransaction() {
         interimCoodrinator = false;
@@ -542,31 +548,36 @@ abstract public class Process {
         currentState = ProcessState.Commitable;
     }
 
-    /****************************************TERMINATION PROTOCOL STUFF *************************/
+    /**
+     * *************************************TERMINATION PROTOCOL STUFF ************************
+     */
     public int coordinator;
     public boolean isWaitingForAck = false;
     Map<Integer, MsgContent> interimStates;
     Set<Integer> interimAcks = new HashSet<Integer>();
+
     public boolean handleSpecificCommands(MsgContent msgContent, String[] msgFields) {
         int fromProcId = Integer.parseInt(msgFields[MsgGen.processNo].trim());
         switch (msgContent) {
             case READY:
-                if(interimCoodrinator)
+                if (interimCoodrinator) {
                     abort();
+                    return false;
+                }
                 break;
             case COMMITED:
             case ABORTED:
-                if(interimCoodrinator) {
+                if (interimCoodrinator) {
                     interimStates.put(fromProcId, msgContent);
-                    takeDecision();
+                    return takeDecision();
                 }
                 break;
             case COMMITABLE:
             case UNCERTAIN:
-                if(interimCoodrinator) {
+                if (interimCoodrinator) {
                     interimStates.put(fromProcId, msgContent);
                     if (interimStates.size() == up.size())
-                        takeDecision();
+                        return takeDecision();
                 }
                 break;
             case STATE_REQ:
@@ -594,12 +605,11 @@ abstract public class Process {
                 sendMsg(MsgContent.ACK, "", fromProcId);
                 break;
             case U_R_COORDINATOR:
-                if(currentState == ProcessState.WaitForVotReq)
+                if (currentState == ProcessState.WaitForVotReq)
                     break;
                 //update my uplist
                 if (!interimCoodrinator) {
-//                    if(!recovered)
-                        updateCoordinator(fromProcId);
+                    updateCoordinator(fromProcId);
                     coordinator = fromProcId;
                     interimCoodrinator = true;
                     interimStates = new HashMap<Integer, MsgContent>();
@@ -615,6 +625,7 @@ abstract public class Process {
                     commit();
                     sendMsgToAll(MsgContent.COMMIT);
                     isWaitingForAck = false;
+                    return false;
                 }
                 break;
             case TIMEOUT:
@@ -623,16 +634,16 @@ abstract public class Process {
                         commit();
                         sendMsgToAll(MsgContent.COMMIT);
                         isWaitingForAck = false;
+                        return false;
                     }
-                    takeDecision();
-                    break;
+                    return takeDecision();
                 }
                 switch (currentState) {
                     case Uncertain:
                     case Commitable:
                         //Run Coordinator election
                         synchronized (up) {
-                            if(coordinator != procNo)
+                            if (coordinator != procNo)
                                 up.remove(coordinator);
                             coordinator = Collections.min(up);
                         }
@@ -658,30 +669,32 @@ abstract public class Process {
         }
     }
 
-    private void takeDecision() {
+    private boolean takeDecision() {
         if (interimStates.containsValue(MsgContent.COMMITED)) {
             commit();
-//            if (!recovered)
             sendMsgToAll(MsgContent.COMMIT);
+            return false;
         } else if (interimStates.containsValue(MsgContent.ABORTED)) {
             abort();
-//            if (!recovered)
             sendMsgToAll(MsgContent.ABORT);
+            return false;
         } else if (interimStates.containsValue(MsgContent.COMMITABLE)) {
             //IF anyone process is uncertain them Send precommit to all (Can be modified to be sedning it only to who are uncertain
             if (interimStates.containsValue(MsgContent.UNCERTAIN)) {
                 precommit();
                 sendMsgToAll(MsgContent.PRECOMMIT);
                 isWaitingForAck = true;
+                return true;
             } else {
                 //Otherwise it implies everyone else is in COMMITTABLE state and we need to COMMIT
                 commit();
                 sendMsgToAll(MsgContent.COMMIT);
+                return false;
             }
         } else {
             abort();
-//            if (!recovered)
             sendMsgToAll(MsgContent.ABORT);
+            return false;
         }
     }
 
@@ -699,7 +712,9 @@ abstract public class Process {
         return true;
     }
 
-    /****************************************TERMINATION PROTOCOL STUFF *************************/
+    /**
+     * *************************************TERMINATION PROTOCOL STUFF ************************
+     */
 
     public void commit() {
         if (currentState != ProcessState.Commitable) {

@@ -40,7 +40,7 @@ public class CoordinatorImpl extends Process implements Coordinator {
                 }
             }
             //get command
-            config.txNo = txNo;
+            //config.txNo = txNo;
             txCommand = txNo + TX_MSG_SEPARATOR_ADD + config.getCommand();
             sendVoteRequests();
             getVotes();
@@ -100,7 +100,7 @@ public class CoordinatorImpl extends Process implements Coordinator {
     public void commit() {
         super.commit();
         config.updateTx();
-        this.txCommand = txNo + TX_MSG_SEPARATOR_ADD + config.getCommand();
+        //this.txCommand = txNo + TX_MSG_SEPARATOR_ADD + config.getCommand();
     }
 
     public void send_commit() {
