@@ -569,6 +569,7 @@ abstract public class Process {
             case ABORTED:
                 if (interimCoodrinator) {
                     interimStates.put(fromProcId, msgContent);
+                    logger.log(Level.CONFIG,"Interim States set "+interimStates+" "+up);
                     return takeDecision();
                 }
                 break;
@@ -576,6 +577,7 @@ abstract public class Process {
             case UNCERTAIN:
                 if (interimCoodrinator) {
                     interimStates.put(fromProcId, msgContent);
+                    logger.log(Level.CONFIG,"Interim States set "+interimStates+" "+up);
                     if (interimStates.size() == up.size())
                         return takeDecision();
                 }
@@ -613,6 +615,7 @@ abstract public class Process {
                     coordinator = fromProcId;
                     interimCoodrinator = true;
                     interimStates = new HashMap<Integer, MsgContent>();
+                    interimStates.put(procNo,Enum.valueOf(MsgContent.class, currentState.msgState));
                     //ask for state req
                     sendMsgToAll(MsgContent.STATE_REQ);
                 }
@@ -684,6 +687,7 @@ abstract public class Process {
                 precommit();
                 sendMsgToAll(MsgContent.PRECOMMIT);
                 isWaitingForAck = true;
+                interimAcks.add(procNo);
                 return true;
             } else {
                 //Otherwise it implies everyone else is in COMMITTABLE state and we need to COMMIT
@@ -699,7 +703,7 @@ abstract public class Process {
     }
 
     public boolean processVoteRequest(String command, int sendTo) {
-        txCommand = command;
+        txCommand = new String(command);
         if (vote) {
             logger.info(LogMsgType.VOTEYES.txt + MsgGen.MSG_FIELD_SEPARATOR + txCommand);
             sendMsg(MsgContent.VoteYes, command, sendTo);
