@@ -69,7 +69,7 @@ abstract public class Process {
         timeout = config.timeout;
         playlist = new Hashtable<String, String>();
         processBackground = new ProcessBackground(this);
-
+        coordinator = -1;
         totalMessageToReceive = msgCount;
         logFileName = "Log" + procNo + ".log";
         playListInstructions = "PlayListInstruction" + procNo + ".txt";
@@ -86,7 +86,6 @@ abstract public class Process {
         //When starting the process initiate its playlist based of the values present in the playlist instructions
         recoverPlayList();
         recoverFromLogs();
-        processBackground.start();
     }
 
     public void sendMsgToN(MsgContent msgContent) {
@@ -229,7 +228,9 @@ abstract public class Process {
         if (isRecoveryNeeded()) {
             recovered = true;
             recoverProcessStatus();
+            processBackground.start();
         } else {
+            processBackground.start();
             recovered = false;
         }
     }
@@ -340,16 +341,17 @@ abstract public class Process {
 
     }
     public void startRecoverWaiting() {
-        Map<Integer, MsgContent> inputStates = new HashMap<Integer, MsgContent>();
+        Set<Integer> receivedStatuses = new HashSet<Integer>();
+//        Map<Integer, MsgContent> inputStates = new HashMap<Integer, MsgContent>();
         Map<Integer, Boolean> recoverStates = new HashMap<Integer, Boolean>();
-        boolean isAnyOneOperational = false;
+        recoverStates.put(procNo, true);
+//        boolean isAnyOneOperational = false; //!isRecoveredProcess
         while (true) {
-            String msg = waitForRecoveryStatusMsg();
+            String msg = waitForRecoveryStatusMsg(recoverStates);
             String[] msgFields = msg.split(MsgGen.MSG_FIELD_SEPARATOR);
             int fromProcId = Integer.parseInt(msgFields[MsgGen.processNo].trim());
             boolean isRecoveredProcess = Boolean.parseBoolean(msgFields[MsgGen.msgData]);
-            recoverStates.put(fromProcId, isRecoveredProcess);
-            isAnyOneOperational = !isRecoveredProcess;
+
             MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFields[MsgGen.msgContent]);
 
             logger.log(Level.CONFIG, msgContent.content + ";Recovery Message From :" + fromProcId + ";current state: " + currentState);
@@ -358,15 +360,21 @@ abstract public class Process {
             //If they say uncertain, that means they are also on the same Tx right now
             //So no need to check for TxNo with the received message.
             switch (msgContent) {
+                case STATUS_REQ:
+                    sendMsg(Enum.valueOf(MsgContent.class, currentState.msgState), Boolean.toString(recovered), fromProcId);
+                    break;
                 case COMMITED:
+                    recoverStates.put(fromProcId, isRecoveredProcess);
                     commit();
                     return;
                 case ABORTED:
+                    recoverStates.put(fromProcId, isRecoveredProcess);
                     abort();
                     return;
                 case UNCERTAIN:
                 case COMMITABLE:
-                    if (isAnyOneOperational)
+                    recoverStates.put(fromProcId, isRecoveredProcess);
+                    if (!isRecoveredProcess)
                         return;
                     else {
                         if (recoverStates.size() == recoverUP.size())
@@ -388,10 +396,22 @@ abstract public class Process {
         recoverUP.add(procNo);
     }
 
-    private String waitForRecoveryStatusMsg() {
+    private String waitForRecoveryStatusMsg(Map<Integer, Boolean> recoverStates) {
         String msg;
+        int counter = 0;
         while ((msg = this.netController.getReceivedMsgMain()) == null) {
             sleeping_for(10);
+            counter += 10;
+
+            if(counter >= timeout){
+                Iterator<Integer> it = recoverUP.iterator();
+                while (it.hasNext()) {
+                    Integer i = it.next();
+                    if (i != procNo && !recoverStates.containsKey(i))
+                        sendMsg(MsgContent.STATUS_REQ, txNo + "", i);
+                }
+                counter = 0;
+            }
         }
         return msg;
     }
@@ -527,18 +547,23 @@ abstract public class Process {
         int fromProcId = Integer.parseInt(msgFields[MsgGen.processNo].trim());
         switch (msgContent) {
             case READY:
-                abort();
+                if(interimCoodrinator)
+                    abort();
                 break;
             case COMMITED:
             case ABORTED:
-                interimStates.put(fromProcId, msgContent);
-                takeDecision();
+                if(interimCoodrinator) {
+                    interimStates.put(fromProcId, msgContent);
+                    takeDecision();
+                }
                 break;
             case COMMITABLE:
             case UNCERTAIN:
-                interimStates.put(fromProcId, msgContent);
-                if (interimStates.size() == up.size())
-                    takeDecision();
+                if(interimCoodrinator) {
+                    interimStates.put(fromProcId, msgContent);
+                    if (interimStates.size() == up.size())
+                        takeDecision();
+                }
                 break;
             case STATE_REQ:
                 updateCoordinator(fromProcId);   //Not using for NOW!
@@ -569,7 +594,9 @@ abstract public class Process {
                     break;
                 //update my uplist
                 if (!interimCoodrinator) {
-                    updateCoordinator(fromProcId);
+//                    if(!recovered)
+                        updateCoordinator(fromProcId);
+                    coordinator = fromProcId;
                     interimCoodrinator = true;
                     interimStates = new HashMap<Integer, MsgContent>();
                     //ask for state req
@@ -601,7 +628,8 @@ abstract public class Process {
                     case Commitable:
                         //Run Coordinator election
                         synchronized (up) {
-                            up.remove(coordinator);
+                            if(coordinator != procNo)
+                                up.remove(coordinator);
                             coordinator = Collections.min(up);
                         }
                         sendMsg(MsgContent.U_R_COORDINATOR, "", coordinator);
@@ -624,7 +652,6 @@ abstract public class Process {
             for (int i = coordinator; i < fromProcId; i++)
                 up.remove(i);
         }
-        coordinator = fromProcId;
     }
 
     private void takeDecision() {
