@@ -20,7 +20,7 @@ abstract public class Process {
     public Config config;
 
     Set<Integer> up = new HashSet<Integer>();
-//    Set<Integer> upReply = new HashSet<Integer>();
+    Set<Integer> allWhoRUp = new HashSet<Integer>();
     Set<Integer> recoverUP = new HashSet<Integer>();
 
     ProcessState currentState;
@@ -65,7 +65,7 @@ abstract public class Process {
         timeout = config.timeout;
         playlist = new Hashtable<String, String>();
         processBackground = new ProcessBackground(this);
-        processBackground.start();
+
         totalMessageToReceive = msgCount;
         logFileName = "Log" + procNo + ".log";
         playListInstructions = "PlayListInstruction" + procNo + ".txt";
@@ -73,9 +73,15 @@ abstract public class Process {
         this.config = config;
         aliveTimeout = config.aliveTimeout;
 
+//        for (int i = 0; i < config.numProcesses; i++) {
+//            synchronized (up) {
+//                up.add(i);
+//            }
+//        }
         //When starting the process initiate its playlist based of the values present in the playlist instructions
         recoverPlayList();
-        recoverIfNeeded();
+        if (isRecoveryNeeded())
+            recoverProcessStatus();
     }
 
     public void sendMsgToAll(MsgContent msgContent) {
@@ -211,7 +217,7 @@ abstract public class Process {
         }
     }
 
-    public void recoverIfNeeded() {
+    public boolean isRecoveryNeeded() {
         try {
             FileReader file = new FileReader(logFileName);
             BufferedReader reader = new BufferedReader(file);
@@ -221,98 +227,104 @@ abstract public class Process {
                 logFile.add(line);
             }
             recovered = true;
-            boolean notDecided = false;
-            boolean deriveredUpset = false;
-            for (int i = logFile.size() - 1; i >= 0; i--) {
-                if (logFile.get(i).contains("INFO:")) {
-                    String matcher = logFile.get(i);
-                    if (!deriveredUpset && matcher.contains((LogMsgType.UPSET.txt))) {
-                        getUpset(matcher);
-                        deriveredUpset = true;
-                        logger.log(Level.INFO, recoverUP.toString());
-                        if (notDecided) {
-                            logger.log(Level.WARNING, "GOT up and need to decide ");
-                            break;
-                        }
-                    }
-                    if (matcher.contains(LogMsgType.NEWTX.txt)) {
-                        //The process is sure that COMMIT has not taken place so the process can again start waiting
-                        return;
-                    } else if (matcher.contains(LogMsgType.ABORT.txt) || matcher.contains(LogMsgType.REC_VOTE_REQ.txt)) {
-                        abort();
-                        return;
-                    } else if (matcher.contains(LogMsgType.PRECOMMIT.txt)) {
-                        currentState = ProcessState.Commitable;
-                        notDecided = true;
-                        txCommand=matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[1];
-                        if (deriveredUpset) {
-                            System.out.println("Know need to decide but yet to get UP");
-                            break;
-                        } else continue;
-                    } else if (matcher.contains(LogMsgType.COMMIT.txt)) {
-                        String txcmd = logFile.get(i + 2);
-                        this.txCommand = txcmd.substring(matcher.lastIndexOf(":")).trim();
-                        commit();
-                        return;
-                    } else if (matcher.contains(LogMsgType.VOTEYES.txt)) {
-                        currentState = ProcessState.Uncertain;
-                        notDecided = true;
-                        if (deriveredUpset)
-                            break;
-                        else continue;
-                    }
-
-                }
-            }
-            if (notDecided) {
-                //a. Cannot recover untill we have up a subet of recoversubset
-                //b. Cannot recover untill we have recoverUp non zero, non null
-                //c. IF recover is equal to itself then just ACT on the state you have
-
-                //
-                if (recoverUP == null || recoverUP.size() == 0) {
-                    System.out.println("Need to decide but do not have anything in UP");
-                    //cannot have recovery
-                    //TODO :ERROR as we need the upset to go further the process cannot recover
-                } else if (recoverUP.size() == 1 && recoverUP.iterator().next() == procNo) {
-                    switch (currentState) {
-                        case Commitable:
-                            //Go up and get the transaction details
-                            commit();
-                            break;
-                        case Uncertain:
-                            abort();
-                            break;
-                    }
-                } else {
-                    //Check that all in up have come recover up have come up
-                    while (!recoverUP.containsAll(up)) {
-                        sleeping_for(10);
-                    }
-                    synchronized (up) {
-                        Iterator<Integer> it = up.iterator();
-                        while (it.hasNext()) {
-                            Integer i = it.next();
-                            if (i != procNo)
-                                sendMsg(MsgContent.STATUS_REQ, "", i);
-                        }
-                    }
-                }
-
-                //do not work until we get response form someone
-                //sendMsg(MsgContent.STATUS_REQ, "", up.iterator().next());
-                //Wait for response otherwise ?????
-                startListening(0);
-            }
-
+       return extractFromLogFile(logFile);
         } catch (IOException e) {
-            //logger.log(Level.FINE, "Unable to read the Log File. Recovery is not needed " + e);
-            return;
+            logger.log(Level.FINE, "Unable to read the Log File. Recovery is not needed " + e);
+        } finally {
+            this.processBackground.start();
+        }
+        return false;
+    }
+
+    public void recoverProcessStatus() {
+        //a. Cannot recover untill we have up a subet of recoversubset
+        //b. Cannot recover untill we have recoverUp non zero, non null
+        //c. IF recover is equal to itself then just ACT on the state you have
+
+//        if (recoverUP == null || recoverUP.size() == 0) {
+//            System.out.println("Need to decide but do not have anything in UP");
+//            //cannot have recovery
+//            //TODO :ERROR as we need the upset to go further the process cannot recover
+//        } else
+        if (recoverUP.size() == 1) {
+            //TELL ALL WHAT THE DECISION IS
+            switch (currentState) {
+                case Commitable:
+                    commit();
+                    break;
+                case Uncertain:
+                    abort();
+                    break;
+                default:
+                    logger.log(Level.WARNING, "!!!!!!!!!!!!!State not Handled!!!!!!!!!!!" + currentState);
+            }
+        } else {
+            //Check that all in up have come recover up have come up
+            logger.log(Level.CONFIG, "Waiting for the RecoverUP process to come up " + recoverUP);
+            while (!allWhoRUp.containsAll(recoverUP)) {
+                sleeping_for(10);
+            }
+
+            Iterator<Integer> it = recoverUP.iterator();
+            while (it.hasNext()) {
+                Integer i = it.next();
+                if (i != procNo)
+                    sendMsg(MsgContent.STATUS_REQ, "last Tx no.", i);
+            }
+            //do not work until we get response form someone
+            //sendMsg(MsgContent.STATUS_REQ, "", up.iterator().next());
+            //Wait for response from all otherwise ?????
+            startRecoverWaiting();
         }
 
     }
 
-    public void getUpset(String str) {
+    private boolean extractFromLogFile(List<String> logFile) {
+        //Get the UP SET
+        for (int i = logFile.size() - 1; i >= 0; i--) {
+            if (logFile.get(i).contains("INFO:")) {
+                String matcher = logFile.get(i);
+                if (matcher.contains((LogMsgType.UPSET.txt))) {
+                    getRecoverUpset(matcher);
+                    logger.log(Level.CONFIG, "RECOVER UP SET " + recoverUP.toString());
+                    break;
+                }
+            }
+        }
+
+
+        //Get the State in which the process died
+        // a. Current state
+        for (int i = logFile.size() - 1; i >= 0; i--) {
+            if (logFile.get(i).contains("INFO:")) {
+                String matcher = logFile.get(i);
+                if (matcher.contains(LogMsgType.NEWTX.txt)) {
+                    //The process is sure that COMMIT has not taken place so the process can again start waiting
+                    return false;
+                } else if (matcher.contains(LogMsgType.ABORT.txt) || matcher.contains(LogMsgType.REC_VOTE_REQ.txt)) {
+                    currentState = ProcessState.Uncertain;
+                    abort();
+                    return false;
+                } else if (matcher.contains(LogMsgType.PRECOMMIT.txt)) {
+                    currentState = ProcessState.Commitable;
+                    this.txCommand = matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[1];
+                    return true;
+                } else if (matcher.contains(LogMsgType.COMMIT.txt)) {
+                    this.txCommand = matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[1];
+                    currentState = ProcessState.Commitable;
+                    commit();
+                    return false;
+                } else if (matcher.contains(LogMsgType.VOTEYES.txt)) {
+                    currentState = ProcessState.Uncertain;
+                    this.txCommand = matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[1];
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public void getRecoverUpset(String str) {
         if (str.contains((LogMsgType.UPSET.txt))) {
             String[] set = str.substring(str.lastIndexOf("[") + 1, str.lastIndexOf("]")).split(",");
             for (String j : set) {
@@ -402,6 +414,50 @@ abstract public class Process {
                 break;
             }
         }
+    }
+
+    public void startRecoverWaiting() {
+        Map<Integer, MsgContent> inputStates = new HashMap<Integer, MsgContent>();
+        while (true) {
+            String msg = waitForRecoveryStatusMsg();
+            String[] msgFields = msg.split(MsgGen.MSG_FIELD_SEPARATOR);
+            int fromProcId = Integer.parseInt(msgFields[MsgGen.processNo].trim());
+
+            MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFields[MsgGen.msgContent]);
+
+            logger.log(Level.CONFIG, msgContent.content + ";Recovery Message From :" + fromProcId + ";current state: " + currentState);
+
+            switch (msgContent) {
+                case COMMITED:
+                    commit();
+                    return;
+                case ABORTED:
+                    abort();
+                    return;
+                case COMMITABLE:
+                case UNCERTAIN:
+                    inputStates.put(fromProcId, msgContent);
+                    if (inputStates.size() == recoverUP.size()-1) {
+                        if (inputStates.containsValue(MsgContent.COMMITABLE)) {
+                            //precommit();
+                            //Chose coordinator
+                        } else {
+                            //Otherwise it implies everyone else is in COMMITTABLE state and we need to COMMIT
+                            abort();
+                        }
+                        return;
+                    }
+                    break;
+            }
+        }
+    }
+
+    private String waitForRecoveryStatusMsg() {
+        String msg;
+        while ((msg = this.netController.getReceivedMsgMain()) == null) {
+            sleeping_for(10);
+        }
+        return msg;
     }
 
     public void abort() {

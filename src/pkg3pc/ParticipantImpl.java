@@ -30,10 +30,13 @@ public class ParticipantImpl extends Process implements Participant {
     public boolean handleSpecificCommands(MsgContent msgContent, String[] msgFields) {
         int fromProcId = Integer.parseInt(msgFields[MsgGen.processNo].trim());
         switch (msgContent) {
-            case UNCERTAIN:
-            case COMMITABLE:
             case COMMITED:
             case ABORTED:
+                interimStates.put(fromProcId, msgContent);
+                takeDecision();
+                break;
+            case COMMITABLE:
+            case UNCERTAIN:
                 interimStates.put(fromProcId, msgContent);
                 if (interimStates.size() == up.size())
                     takeDecision();
@@ -43,11 +46,11 @@ public class ParticipantImpl extends Process implements Participant {
                 sendStateRequestRes(fromProcId);
                 break;
             case VOTE_REQ:
-                logger.info(LogMsgType.REC_VOTE_REQ.txt);
+                logger.info(LogMsgType.REC_VOTE_REQ.txt + MsgGen.MSG_FIELD_SEPARATOR + txCommand);
                 try {
                     coordinator = fromProcId;
                     String[] ups = msgFields[MsgGen.ups].split(",");
-                    for(String s : ups) {
+                    for (String s : ups) {
                         synchronized (up) {
                             up.add(Integer.parseInt(s));
                         }
@@ -71,7 +74,7 @@ public class ParticipantImpl extends Process implements Participant {
                 break;
             case U_R_COORDINATOR:
                 //update my uplist
-                if(!interimCoodrinator) {
+                if (!interimCoodrinator) {
                     updateCoordinator(fromProcId);
                     interimCoodrinator = true;
                     interimStates = new HashMap<Integer, MsgContent>();
@@ -130,9 +133,16 @@ public class ParticipantImpl extends Process implements Participant {
             abort();
             sendMsgToAll(MsgContent.ABORT);
         } else if (interimStates.containsValue(MsgContent.COMMITABLE)) {
-            precommit();
-            sendMsgToAll(MsgContent.PRECOMMIT);
-            isWaitingForAck = true;
+            //IF anyone process is uncertain them Send precommit to all (Can be modified to be sedning it only to who are uncertain
+            if (interimStates.containsValue(MsgContent.UNCERTAIN)) {
+                precommit();
+                sendMsgToAll(MsgContent.PRECOMMIT);
+                isWaitingForAck = true;
+            } else {
+                //Otherwise it implies everyone else is in COMMITTABLE state and we need to COMMIT
+                commit();
+                sendMsgToAll(MsgContent.COMMIT);
+            }
         } else {
             abort();
             sendMsgToAll(MsgContent.ABORT);

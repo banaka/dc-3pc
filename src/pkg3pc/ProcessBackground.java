@@ -28,19 +28,32 @@ public class ProcessBackground extends Thread {
         while (true) {
 //            p.sendMsgToAll(MsgContent.CHECKALIVE);
             Set<Integer> oldUp = p.up;
+            Set<Integer> oldAllWhoRUp = p.allWhoRUp;
+
             synchronized (p.up) {
                 Set<Integer> temp = new HashSet<Integer>();
-                Iterator<Integer> it = p.up.iterator();
-                while(it.hasNext()){
-                    int proc = it.next();
-                    if(!available(8080+proc))
-                        temp.add(proc);
-//                    else if(!available(8080+proc))
-//                        temp.add(proc);
+                for (int i=0; i< p.config.numProcesses;i++){
+                    if(!available(8080+i))
+                        temp.add(i);
                 }
                 temp.add(p.procNo);
-                p.up = temp;
+                p.allWhoRUp = temp;
+                p.up.retainAll(p.allWhoRUp);
             }
+
+//            synchronized (p.up) {
+//                Set<Integer> temp = new HashSet<Integer>();
+//                Iterator<Integer> it = p.up.iterator();
+//                while(it.hasNext()){
+//                    int proc = it.next();
+//                    if(!available(8080+proc))
+//                        temp.add(proc);
+////                    else if(!available(8080+proc))
+////                        temp.add(proc);
+//                }
+//                temp.add(p.procNo);
+//                p.up = temp;
+//            }
 
 //            synchronized (p.upReply) {
 //                p.upReply.clear();
@@ -52,6 +65,8 @@ public class ProcessBackground extends Thread {
             String margin = "...............................................................";
             p.logger.log(Level.CONFIG, margin + "Old UpSet:" + oldUp + " Current State :" + p.currentState);
             p.logger.log(Level.INFO, margin+ LogMsgType.UPSET.txt + "  " + p.up);
+            p.logger.log(Level.CONFIG, margin + "Old allWhoRUp:" + oldAllWhoRUp );
+            p.logger.log(Level.INFO, margin+ LogMsgType.UPSET.txt + "  " + p.allWhoRUp);
 //            synchronized (p.up) {
 //                p.up = p.upReply;
 //            }

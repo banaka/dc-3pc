@@ -99,7 +99,7 @@ public class CoordinatorImpl extends Process implements Coordinator {
     }
 
     public void send_precommit() {
-        logger.info(LogMsgType.PRECOMMIT.txt);
+        logger.info(LogMsgType.PRECOMMIT.txt + MsgGen.MSG_FIELD_SEPARATOR + txCommand);
         for (int i = 0; i < noOfProcesses; i++) {
             if (i != procNo)
                 sendMsg(MsgContent.PRECOMMIT, "", i);
