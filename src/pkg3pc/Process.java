@@ -546,7 +546,7 @@ abstract public class Process {
     public int coordinator;
     public boolean isWaitingForAck = false;
     Map<Integer, MsgContent> interimStates;
-    Set<Integer> interimAcks;
+    Set<Integer> interimAcks = new HashSet<Integer>();
     public boolean handleSpecificCommands(MsgContent msgContent, String[] msgFields) {
         int fromProcId = Integer.parseInt(msgFields[MsgGen.processNo].trim());
         switch (msgContent) {
