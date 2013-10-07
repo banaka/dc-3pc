@@ -24,7 +24,7 @@ public class Config {
 
     public int txNo;
     public int aliveTimeout;
-
+    public Properties prop;
     /**
      * Loads config from a file.  Optionally puts in 'procNum' if in file.
      * See sample file for syntax
@@ -34,7 +34,7 @@ public class Config {
      * @throws IOException
      */
     public Config(String filename, int procNum) throws IOException {
-        Properties prop = new Properties();
+        prop = new Properties();
         prop.load(new FileInputStream(filename));
         this.filename = filename;
         numProcesses = Helper.loadInt(prop, "NumProcesses");
@@ -51,10 +51,7 @@ public class Config {
         clean = prop.getProperty("clean");
 
         txNo = Helper.loadInt(prop, "txNo");
-        command = (prop.getProperty("command" + txNo));
-        if(command == null)
-            command = prop.getProperty("command");
-        command = command.trim();
+        command = getCommand();
 
         logger = Logger.getLogger("NetFramework");
         logger.setLevel(Level.FINER);
@@ -84,6 +81,14 @@ public class Config {
             addresses[i] = InetAddress.getByName("localhost");
         }
         this.procNum = procNum;
+    }
+
+    public String getCommand() {
+        command = (prop.getProperty("command" + txNo));
+        if(command == null)
+            command = prop.getProperty("command");
+        command = command.trim();
+        return command;
     }
 
     /**

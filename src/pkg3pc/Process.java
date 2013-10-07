@@ -152,12 +152,14 @@ abstract public class Process {
 
     void processDelFromPlaylist(String name, String url) {
         logger.log(Level.CONFIG, "Deleting item of the playlist - " + name + " " + playlist.get(name));
-        playlist.remove(playlist.get(name));
+        if (playlist.get(name)!=null)
+            playlist.remove(playlist.get(name));
     }
 
     void processEditPlaylist(String name, String url, String newName, String newUrl) {
         logger.log(Level.CONFIG, "Editing item of the playlist - " + name + " " + url + " too " + newUrl + " " + newName);
-        playlist.remove(playlist.get(name));
+        if (playlist.get(name)!=null)
+            playlist.remove(playlist.get(name));
         playlist.put(newName, newUrl);
     }
 
@@ -285,20 +287,20 @@ abstract public class Process {
                     return false;
                 } else if (matcher.contains(LogMsgType.PRECOMMIT.txt)) {
                     currentState = ProcessState.Commitable;
-                    this.txCommand = matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[2];
-                    txNo = Integer.parseInt(this.txCommand.split(TX_MSG_SEPARATOR, 1)[0].trim());
+                    this.txCommand = matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[MsgGen.msgData];
+                    txNo = Integer.parseInt(this.txCommand.split(TX_MSG_SEPARATOR, 2)[0].trim());
                     return true;
                 } else if (matcher.contains(LogMsgType.COMMIT.txt)) {
-                    this.txCommand = matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[2];
-                    txNo = Integer.parseInt(this.txCommand.split(TX_MSG_SEPARATOR, 1)[0].trim());
+                    this.txCommand = matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[MsgGen.msgData];
+                    txNo = Integer.parseInt(this.txCommand.split(TX_MSG_SEPARATOR, 2)[0].trim());
                     currentState = ProcessState.Commitable;
                     commit();
                     return false;
                 } else if (matcher.contains(LogMsgType.VOTEYES.txt)) {
                     currentState = ProcessState.Uncertain;
                     if(!wasCoordinator) {
-                        this.txCommand = matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[2];
-                        txNo = Integer.parseInt(this.txCommand.split(TX_MSG_SEPARATOR, 1)[0].trim());
+                        this.txCommand = matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[MsgGen.msgData];
+                        txNo = Integer.parseInt(this.txCommand.split(TX_MSG_SEPARATOR, 2)[0].trim());
                         return true;
                     } else
                         return false;
@@ -704,10 +706,6 @@ abstract public class Process {
         }
         Helper.clearLogs(logFileName);
         txNo++;
-
-        if (procNo == 0) {
-            config.updateTx();
-        }
     }
 }
 
