@@ -54,6 +54,10 @@ public class CoordinatorImpl extends Process implements Coordinator {
 
     @Override
     public boolean handleSpecificCommands(MsgContent msgContent, String[] msgFields) {
+        if(recovered) {
+           return super.handleSpecificCommands(msgContent, msgFields);
+        }
+
         boolean shouldContinue = true;
         int fromProcId = Integer.parseInt(msgFields[MsgGen.processNo].trim());
 

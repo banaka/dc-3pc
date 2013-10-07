@@ -10,10 +10,6 @@ package pkg3pc;
  */
 public interface Participant {
     
-    public boolean processVoteRequest(String command, int from);
+//    public boolean processVoteRequest(String command, int from);
     
-    public void processStateRequest();
-
-
-
 }
