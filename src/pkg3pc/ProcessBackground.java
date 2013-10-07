@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Level;
 
@@ -37,6 +36,7 @@ public class ProcessBackground extends Thread {
                         temp.add(i);
                 }
                 temp.add(p.procNo);
+                p.up.add(p.procNo);
                 p.allWhoRUp = temp;
                 p.up.retainAll(p.allWhoRUp);
             }
@@ -66,7 +66,7 @@ public class ProcessBackground extends Thread {
             p.logger.log(Level.CONFIG, margin + "Old UpSet:" + oldUp + " Current State :" + p.currentState);
             p.logger.log(Level.INFO, margin+ LogMsgType.UPSET.txt + "  " + p.up);
             p.logger.log(Level.CONFIG, margin + "Old allWhoRUp:" + oldAllWhoRUp );
-            p.logger.log(Level.INFO, margin+ LogMsgType.UPSET.txt + "  " + p.allWhoRUp);
+            p.logger.log(Level.CONFIG, margin+ LogMsgType.UPSET.txt + "  " + p.allWhoRUp);
 //            synchronized (p.up) {
 //                p.up = p.upReply;
 //            }
