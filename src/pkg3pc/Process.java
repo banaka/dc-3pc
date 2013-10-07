@@ -80,10 +80,21 @@ abstract public class Process {
 //        }
         //When starting the process initiate its playlist based of the values present in the playlist instructions
         recoverPlayList();
-        if (isRecoveryNeeded())
+        if (isRecoveryNeeded())  {
+            recovered = true;
             recoverProcessStatus();
+        } else {
+            recovered = false;
+        }
+
     }
 
+    public void sendMsgToN(MsgContent msgContent) {
+        for(int i = 0; i < config.numProcesses; i++){
+            if(i != procNo)
+                sendMsg(msgContent, "", i);
+        }
+    }
     public void sendMsgToAll(MsgContent msgContent) {
         synchronized (up) {
             Iterator<Integer> it = up.iterator();
@@ -226,7 +237,7 @@ abstract public class Process {
             while ((line = reader.readLine()) != null) {
                 logFile.add(line);
             }
-            recovered = true;
+//            recovered = true;              //WHYYY ALWAYS TRUE?
        return extractFromLogFile(logFile);
         } catch (IOException e) {
             logger.log(Level.FINE, "Unable to read the Log File. Recovery is not needed " + e);
@@ -251,27 +262,30 @@ abstract public class Process {
             switch (currentState) {
                 case Commitable:
                     commit();
+                    sendMsgToN(MsgContent.COMMIT);
                     break;
                 case Uncertain:
                     abort();
+                    sendMsgToN(MsgContent.ABORT);
                     break;
                 default:
                     logger.log(Level.WARNING, "!!!!!!!!!!!!!State not Handled!!!!!!!!!!!" + currentState);
             }
         } else {
-            //Check that all in up have come recover up have come up
-            logger.log(Level.CONFIG, "Waiting for the RecoverUP process to come up " + recoverUP);
-            while (!allWhoRUp.containsAll(recoverUP)) {
-                sleeping_for(10);
-            }
-
+            //Asking State Req to all present in recover
             Iterator<Integer> it = recoverUP.iterator();
             while (it.hasNext()) {
                 Integer i = it.next();
                 if (i != procNo)
-                    sendMsg(MsgContent.STATUS_REQ, "last Tx no.", i);
+                    sendMsg(MsgContent.STATUS_REQ, txNo+"", i);
             }
-            //do not work until we get response form someone
+            //Check that all in up have come recover up have come up
+//            logger.log(Level.CONFIG, "Waiting for the RecoverUP process to come up " + recoverUP);
+//            while (!allWhoRUp.containsAll(recoverUP)) {
+//                sleeping_for(10);
+//            }
+//            logger.log(Level.CONFIG, "RecoverUP has come inside " + allWhoRUp);
+             //do not work until we get response form someone
             //sendMsg(MsgContent.STATUS_REQ, "", up.iterator().next());
             //Wait for response from all otherwise ?????
             startRecoverWaiting();
@@ -291,8 +305,14 @@ abstract public class Process {
                 }
             }
         }
+        boolean wasCoordinator = false;
+        for (int i = logFile.size() - 1; i >= 0; i--)
+            if (logFile.get(i).contains("INFO:"))
+                if (logFile.get(i).contains((LogMsgType.START3PC.txt)))
+                    wasCoordinator = true;
 
-
+        //ToDo: Do something with the wasCordinator
+                    //ToDo: GET the TxNo From DTlog
         //Get the State in which the process died
         // a. Current state
         for (int i = logFile.size() - 1; i >= 0; i--) {
@@ -401,6 +421,11 @@ abstract public class Process {
                     abort();
                     shouldContinue = false;
                     break;
+                case STATUS_REQ:
+                    //Only sent by recovering nodes...
+                    sendMsg(Enum.valueOf(MsgContent.class, currentState.msgState), txCommand, fromProcId);
+                    //sendStatusRequestRes(fromProcId);
+                    break;
 //                case CHECKALIVE:
 //                    sendMsg(MsgContent.IAMALIVE, "", fromProcId);
 //                    break;
@@ -418,11 +443,15 @@ abstract public class Process {
 
     public void startRecoverWaiting() {
         Map<Integer, MsgContent> inputStates = new HashMap<Integer, MsgContent>();
+        Map<Integer, Boolean> recoverStates = new HashMap<Integer, Boolean>();
+        boolean isAnyOneOperational = false;
         while (true) {
             String msg = waitForRecoveryStatusMsg();
             String[] msgFields = msg.split(MsgGen.MSG_FIELD_SEPARATOR);
             int fromProcId = Integer.parseInt(msgFields[MsgGen.processNo].trim());
-
+            boolean isRecoveredProcess = Boolean.parseBoolean(msgFields[MsgGen.msgData]);
+            recoverStates.put(fromProcId, isRecoveredProcess);
+            isAnyOneOperational = !isRecoveredProcess;
             MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFields[MsgGen.msgContent]);
 
             logger.log(Level.CONFIG, msgContent.content + ";Recovery Message From :" + fromProcId + ";current state: " + currentState);
@@ -436,17 +465,23 @@ abstract public class Process {
                     return;
                 case COMMITABLE:
                 case UNCERTAIN:
-                    inputStates.put(fromProcId, msgContent);
-                    if (inputStates.size() == recoverUP.size()-1) {
-                        if (inputStates.containsValue(MsgContent.COMMITABLE)) {
-                            //precommit();
-                            //Chose coordinator
-                        } else {
-                            //Otherwise it implies everyone else is in COMMITTABLE state and we need to COMMIT
-                            abort();
-                        }
+                    if(isAnyOneOperational)
                         return;
+                    else {
+                        if(recoverStates.size() == recoverUP.size())
+                            return;
                     }
+//                    inputStates.put(fromProcId, msgContent);
+//                    if (inputStates.size() == recoverUP.size()-1) {
+//                        if (inputStates.containsValue(MsgContent.COMMITABLE)) {
+//                            //precommit();
+//                            //Chose coordinator
+//                        } else {
+//                            //Otherwise it implies everyone else is in COMMITTABLE state and we need to COMMIT
+//                            abort();
+//                        }
+//                        return;
+//                    }
                     break;
             }
         }
