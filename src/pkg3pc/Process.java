@@ -595,6 +595,7 @@ abstract public class Process {
             case VOTE_REQ:
                 if(isAnyOneOperational && recovered)
                     break;      //Wait for getting an abort or commit
+                txCommand = new String(msgFields[MsgGen.msgData]);
                 logger.info(LogMsgType.REC_VOTE_REQ.txt + MsgGen.MSG_FIELD_SEPARATOR + txCommand);
                 try {
                     coordinator = fromProcId;
@@ -715,7 +716,6 @@ abstract public class Process {
     }
 
     public boolean processVoteRequest(String command, int sendTo) {
-        txCommand = new String(command);
         if (vote) {
             logger.info(LogMsgType.VOTEYES.txt + MsgGen.MSG_FIELD_SEPARATOR + txCommand);
             sendMsg(MsgContent.VoteYes, command, sendTo);
