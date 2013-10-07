@@ -128,12 +128,12 @@ public class ParticipantImpl extends Process implements Participant {
     private void takeDecision() {
         if (interimStates.containsValue(MsgContent.COMMITED)) {
             commit();
-            if (!recovered)
-                sendMsgToAll(MsgContent.COMMIT);
+//            if (!recovered)
+            sendMsgToAll(MsgContent.COMMIT);
         } else if (interimStates.containsValue(MsgContent.ABORTED)) {
             abort();
-            if (!recovered)
-                sendMsgToAll(MsgContent.ABORT);
+//            if (!recovered)
+            sendMsgToAll(MsgContent.ABORT);
         } else if (interimStates.containsValue(MsgContent.COMMITABLE)) {
             //IF anyone process is uncertain them Send precommit to all (Can be modified to be sedning it only to who are uncertain
             if (interimStates.containsValue(MsgContent.UNCERTAIN)) {
@@ -147,8 +147,8 @@ public class ParticipantImpl extends Process implements Participant {
             }
         } else {
             abort();
-            if (!recovered)
-                sendMsgToAll(MsgContent.ABORT);
+//            if (!recovered)
+            sendMsgToAll(MsgContent.ABORT);
         }
     }
 
