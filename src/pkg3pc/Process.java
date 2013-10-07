@@ -99,7 +99,11 @@ abstract public class Process {
         synchronized (up) {
             Iterator<Integer> it = up.iterator();
             while (it.hasNext())
-                sendMsg(msgContent, "", it.next());
+            {
+                int n = it.next();
+                if (n!= this.procNo)
+                    sendMsg(msgContent, "", n);
+            }
         }
     }
 
