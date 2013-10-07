@@ -57,7 +57,7 @@ public class ParticipantImpl extends Process implements Participant {
                     }
                     return processVoteRequest(msgFields[MsgGen.msgData], fromProcId);
                 } catch (ArrayIndexOutOfBoundsException e) {
-                    System.out.println("Please Send your transaction command with Vote Req!!");
+                    logger.log(Level.WARNING, "Please Send your transaction command with Vote Req!!");
                 }
                 break;
             case PRECOMMIT:
@@ -113,7 +113,7 @@ public class ParticipantImpl extends Process implements Participant {
                     case WaitForVotReq:
                         break;
                     default:
-                        System.out.println("Timed out ...relistening...");
+                        logger.log(Level.WARNING, "Timed out ...relistening...");
                 }
                 break;
             default:

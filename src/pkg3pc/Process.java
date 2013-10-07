@@ -122,6 +122,7 @@ abstract public class Process {
     void updateMessagesReceived() {
         totalMessageReceived++;
         if (totalMessageToReceive != 0 && totalMessageReceived >= totalMessageToReceive) {
+            logger.log(Level.SEVERE, "CRASHING!...Expected Number of messages received");
             System.exit(0);
         }
     }
@@ -230,7 +231,7 @@ abstract public class Process {
                         deriveredUpset = true;
                         logger.log(Level.INFO, recoverUP.toString());
                         if (notDecided) {
-                            System.out.println("GOT up and need to decide ");
+                            logger.log(Level.WARNING, "GOT up and need to decide ");
                             break;
                         }
                     }

@@ -4,9 +4,6 @@ import ut.distcomp.framework.Config;
 import ut.distcomp.framework.NetController;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * @author bansal
@@ -16,16 +13,18 @@ public class Main {
     static void initiateProcess(NetController n, Config config, String[] args) {
         Process p;
         Boolean vote = true;
+        int msgCount = 0;
         int pid = Integer.parseInt(args[0]);
         if (config.clean != null)
             Helper.clearLogs("Log" + pid + ".log");
         if (args.length > 1)
             vote = Boolean.parseBoolean(args[1]);
-
+        if( args.length > 2)
+            msgCount = Integer.parseInt(args[2]);
         if (pid == 0) {
-            p = new CoordinatorImpl(n, pid, vote, 0, config);
+            p = new CoordinatorImpl(n, pid, vote, msgCount, config);
         } else {
-            p = new ParticipantImpl(n, pid, vote, 0, config);
+            p = new ParticipantImpl(n, pid, vote, msgCount, config);
         }
         p.refreshState();
     }
