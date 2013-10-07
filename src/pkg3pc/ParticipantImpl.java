@@ -13,5 +13,6 @@ import ut.distcomp.framework.NetController;
 public class ParticipantImpl extends Process implements Participant {
     ParticipantImpl(NetController netController, int procNo, Boolean voteInput, int msgCount, Config config) {
         super(netController, procNo, voteInput, msgCount, config);
+        this.timeout = config.timeout * 2;
     }
 }
