@@ -48,9 +48,13 @@ public class Config {
             timeout = Helper.loadInt(prop, "timeout");
         if (prop.getProperty("timeout") != null)
             aliveTimeout = Helper.loadInt(prop, "timeout") / 2;
-        command = prop.getProperty("command").trim();
         clean = prop.getProperty("clean");
+
         txNo = Helper.loadInt(prop, "txNo");
+        command = (prop.getProperty("command" + txNo));
+        if(command == null)
+            command = prop.getProperty("command");
+        command = command.trim();
 
         logger = Logger.getLogger("NetFramework");
         logger.setLevel(Level.FINER);

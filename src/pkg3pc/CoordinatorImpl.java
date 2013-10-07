@@ -25,25 +25,25 @@ public class CoordinatorImpl extends Process implements Coordinator {
 
     CoordinatorImpl(NetController netController, int procNo, Boolean voteInput, int msgCount, Config config) {
         super(netController, procNo, voteInput, msgCount, config);
-        this.txCommand = config.command;
+        this.txCommand = txNo + TX_MSG_SEPARATOR + config.command;
         this.noOfProcesses = config.numProcesses;
     }
 
     @Override
     public void initTransaction() {
-        currentState = ProcessState.VoteReq;
-        logger.info(LogMsgType.START3PC.txt);
-        for (int i = 0; i < noOfProcesses; i++) {
-            synchronized (up) {
-                up.add(i);
+        if(!recovered){
+            currentState = ProcessState.VoteReq;
+            logger.info(LogMsgType.START3PC.txt);
+            for (int i = 0; i < noOfProcesses; i++) {
+                synchronized (up) {
+                    up.add(i);
+                }
             }
-//            synchronized (upReply) {
-//                upReply.add(i);
-//            }
-        }
-        sendVoteRequests();
-        getVotes();
-        processVotes();
+            sendVoteRequests();
+            getVotes();
+            processVotes();
+        } else
+            startListening(0);
     }
 
     public void precommitPhase() {

@@ -84,7 +84,7 @@ abstract public class Process {
 //        }
         //When starting the process initiate its playlist based of the values present in the playlist instructions
         recoverPlayList();
-        if (isRecoveryNeeded())  {
+        if (isRecoveryNeeded()) {
             recovered = true;
             recoverProcessStatus();
         } else {
@@ -94,11 +94,12 @@ abstract public class Process {
     }
 
     public void sendMsgToN(MsgContent msgContent) {
-        for(int i = 0; i < config.numProcesses; i++){
-            if(i != procNo)
+        for (int i = 0; i < config.numProcesses; i++) {
+            if (i != procNo)
                 sendMsg(msgContent, "", i);
         }
     }
+
     public void sendMsgToAll(MsgContent msgContent) {
         synchronized (up) {
             Iterator<Integer> it = up.iterator();
@@ -191,7 +192,6 @@ abstract public class Process {
      */
     public void refreshState() {
         while (true) {
-            recovered = false;
             initTransaction();
         }
     }
@@ -206,19 +206,17 @@ abstract public class Process {
                 line = line.trim();
                 String[] txDetail = line.split(MsgGen.MSG_FIELD_SEPARATOR);
                 txStates.add(Integer.parseInt(txDetail[0]));
+
                 String[] cmd = txDetail[1].split(TX_MSG_SEPARATOR);
                 switch (playlistCommand.valueOf(cmd[0])) {
                     case ADD:
                         processAddToPlaylist(cmd[1], cmd[2]);
-                        txNo++;
                         break;
                     case EDIT:
                         processEditPlaylist(cmd[1], cmd[2], cmd[3], cmd[4]);
-                        txNo++;
                         break;
                     case DELETE:
                         processDelFromPlaylist(cmd[1], cmd[2]);
-                        txNo++;
                         break;
                 }
             }
@@ -243,10 +241,10 @@ abstract public class Process {
             while ((line = reader.readLine()) != null) {
                 logFile.add(line);
             }
-            if(logFile.isEmpty())
+            if (logFile.isEmpty())
                 return false;
 //           recovered = true;              //WHYYY ALWAYS TRUE?
-       return extractFromLogFile(logFile);
+            return extractFromLogFile(logFile);
         } catch (IOException e) {
             logger.log(Level.FINE, "Unable to read the Log File. Recovery is not needed " + e);
         }
@@ -286,15 +284,16 @@ abstract public class Process {
             while (it.hasNext()) {
                 Integer i = it.next();
                 if (i != procNo)
-                    sendMsg(MsgContent.STATUS_REQ, txNo+"", i);
+                    sendMsg(MsgContent.STATUS_REQ, txNo + "", i);
             }
+            up = recoverUP;
             //Check that all in up have come recover up have come up
 //            logger.log(Level.CONFIG, "Waiting for the RecoverUP process to come up " + recoverUP);
 //            while (!allWhoRUp.containsAll(recoverUP)) {
 //                sleeping_for(10);
 //            }
 //            logger.log(Level.CONFIG, "RecoverUP has come inside " + allWhoRUp);
-             //do not work until we get response form someone
+            //do not work until we get response form someone
             //sendMsg(MsgContent.STATUS_REQ, "", up.iterator().next());
             //Wait for response from all otherwise ?????
             startRecoverWaiting();
@@ -321,7 +320,7 @@ abstract public class Process {
                     wasCoordinator = true;
 
         //ToDo: Do something with the wasCordinator
-                    //ToDo: GET the TxNo From DTlog
+        //ToDo: GET the TxNo From DTlog
         //Get the State in which the process died
         // a. Current state
         for (int i = logFile.size() - 1; i >= 0; i--) {
@@ -337,15 +336,18 @@ abstract public class Process {
                 } else if (matcher.contains(LogMsgType.PRECOMMIT.txt)) {
                     currentState = ProcessState.Commitable;
                     this.txCommand = matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[1];
+                    txNo = Integer.parseInt(this.txCommand.split(TX_MSG_SEPARATOR, 1)[0].trim());
                     return true;
                 } else if (matcher.contains(LogMsgType.COMMIT.txt)) {
                     this.txCommand = matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[1];
+                    txNo = Integer.parseInt(this.txCommand.split(TX_MSG_SEPARATOR, 1)[0].trim());
                     currentState = ProcessState.Commitable;
                     commit();
                     return false;
                 } else if (matcher.contains(LogMsgType.VOTEYES.txt)) {
                     currentState = ProcessState.Uncertain;
                     this.txCommand = matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[1];
+                    txNo = Integer.parseInt(this.txCommand.split(TX_MSG_SEPARATOR, 1)[0].trim());
                     return true;
                 }
             }
@@ -364,9 +366,11 @@ abstract public class Process {
     }
 
     public void initTransaction() {
-        logger.info(LogMsgType.NEWTX.txt);
         interimCoodrinator = false;
-        currentState = ProcessState.WaitForVotReq;
+        if (!recovered) {
+            logger.info(LogMsgType.NEWTX.txt);
+            currentState = ProcessState.WaitForVotReq;
+        }
         startListening(0);
     }
 
@@ -433,13 +437,13 @@ abstract public class Process {
                     //Only sent by recovering nodes...
                     ProcessState p = currentState;
                     int askedForTx = Integer.parseInt(msgFields[MsgGen.msgData].trim());
-                    if(askedForTx != txNo) {
-                        if(txStates.contains(txCommand))
+                    if (askedForTx != txNo) {
+                        if (txStates.contains(txCommand))
                             p = ProcessState.Commited;
                         else
                             p = ProcessState.Aborted;
                     }
-                    sendMsg(Enum.valueOf(MsgContent.class, p.msgState), txCommand, fromProcId);
+                    sendMsg(Enum.valueOf(MsgContent.class, p.msgState), Boolean.toString(recovered), fromProcId);
                     //sendStatusRequestRes(fromProcId);
                     break;
 //                case CHECKALIVE:
@@ -484,10 +488,10 @@ abstract public class Process {
                     return;
                 case COMMITABLE:
                 case UNCERTAIN:
-                    if(isAnyOneOperational)
+                    if (isAnyOneOperational)
                         return;
                     else {
-                        if(recoverStates.size() == recoverUP.size())
+                        if (recoverStates.size() == recoverUP.size())
                             return;
                     }
 //                    inputStates.put(fromProcId, msgContent);
@@ -525,6 +529,7 @@ abstract public class Process {
 
             Helper.clearLogs(logFileName);
         }
+        recovered = false;
     }
 
     public void precommit() {
@@ -547,7 +552,8 @@ abstract public class Process {
         logger.log(Level.INFO, LogMsgType.COMMIT.txt + MsgGen.MSG_FIELD_SEPARATOR + txCommand);
         //logger.log(Level.INFO, txCommand);
         currentState = ProcessState.Commited;
-        String[] cmd = txCommand.split(TX_MSG_SEPARATOR);
+        String[] txDetail = txCommand.split(TX_MSG_SEPARATOR, 1);
+        String[] cmd = txDetail[1].split(TX_MSG_SEPARATOR);
         switch (playlistCommand.valueOf(cmd[0])) {
             case ADD:
                 processAddToPlaylist(cmd[1], cmd[2]);
@@ -560,6 +566,7 @@ abstract public class Process {
                 break;
 
         }
+        recovered = false;
 
         //Add the transaction message into the playlist instruction
         try {
@@ -572,7 +579,11 @@ abstract public class Process {
             logger.log(Level.FINE, "Unable to write into the PlaylistInstructions File. Please Check!!" + e);
         }
         Helper.clearLogs(logFileName);
+        txNo++;
 
+        if (procNo == 0) {
+            config.updateTx();
+        }
     }
 }
 
