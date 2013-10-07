@@ -196,7 +196,7 @@ abstract public class Process {
 
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
-                String[] txDetail = line.split(MsgGen.MSG_FIELD_SEPARATOR);
+                String[] txDetail = line.split(TX_MSG_SEPARATOR,2);
                 txStates.add(Integer.parseInt(txDetail[0]));
 
                 String[] cmd = txDetail[1].split(TX_MSG_SEPARATOR);
@@ -698,7 +698,7 @@ abstract public class Process {
         try {
             FileWriter fileWriter = new FileWriter(playListInstructions, true);
             BufferedWriter bufferFileWriter = new BufferedWriter(fileWriter);
-            fileWriter.append(txNo + MsgGen.MSG_FIELD_SEPARATOR + txCommand + "\n");
+            fileWriter.append(txCommand + System.getProperty("line.separator"));
             bufferFileWriter.close();
 
         } catch (IOException e) {
