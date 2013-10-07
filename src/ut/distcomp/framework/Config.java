@@ -36,6 +36,7 @@ public class Config {
     public Config(String filename, int procNum) throws IOException {
         Properties prop = new Properties();
         prop.load(new FileInputStream(filename));
+        this.filename = filename;
         numProcesses = Helper.loadInt(prop, "NumProcesses");
         timeout = 5000;
         aliveTimeout = 2000;
@@ -111,7 +112,7 @@ public class Config {
      * This hosts number (should correspond to array above).  Each host should have a different number.
      */
     public int procNum;
-
+    public String filename;
     /**
      * Logger.  Mainly used for console printing, though be diverted to a file.
      * Verbosity can be restricted by raising level to WARN
@@ -120,13 +121,12 @@ public class Config {
 
     public void updateTx() {
         try {
-            FileInputStream in = new FileInputStream("First.properties");
+            FileInputStream in = new FileInputStream(filename);
             Properties prop = new Properties();
             prop.load(in);
             in.close();
 
-            FileOutputStream out = new FileOutputStream("config.properties");
-            prop = new Properties();
+            FileOutputStream out = new FileOutputStream(filename);
             prop.setProperty("txNo", Integer.toString(txNo + 1));
             prop.store(out, null);
             out.close();

@@ -24,7 +24,7 @@ public class Main {
         if( args.length > 2)
             msgCount = Integer.parseInt(args[2]);
         if (pid == 0) {
-            config.updateTx();
+//            config.updateTx();
             p = new CoordinatorImpl(n, pid, vote, msgCount, config);
         } else {
             p = new ParticipantImpl(n, pid, vote, msgCount, config);
