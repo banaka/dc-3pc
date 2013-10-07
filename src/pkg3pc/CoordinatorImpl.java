@@ -25,7 +25,7 @@ public class CoordinatorImpl extends Process implements Coordinator {
 
     CoordinatorImpl(NetController netController, int procNo, Boolean voteInput, int msgCount, Config config) {
         super(netController, procNo, voteInput, msgCount, config);
-        this.txCommand = txNo + TX_MSG_SEPARATOR_ADD + config.getCommand();
+        //this.txCommand = txNo + TX_MSG_SEPARATOR_ADD + config.getCommand();
         this.noOfProcesses = config.numProcesses;
     }
 
@@ -39,6 +39,9 @@ public class CoordinatorImpl extends Process implements Coordinator {
                     up.add(i);
                 }
             }
+            //get command
+            config.txNo = txNo;
+            txCommand = txNo + TX_MSG_SEPARATOR_ADD + config.getCommand();
             sendVoteRequests();
             getVotes();
             processVotes();
