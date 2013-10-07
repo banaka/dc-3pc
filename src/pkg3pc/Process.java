@@ -45,6 +45,7 @@ abstract public class Process {
     private final Set<MsgContent> backgroundSet = new HashSet<MsgContent>(Arrays.asList(MsgContent.IAMALIVE, MsgContent.CHECKALIVE));
     boolean recovered;
     public boolean interimCoodrinator = false;
+    boolean isAnyOneOperational = false;
 
     public enum playlistCommand {
 
@@ -309,8 +310,11 @@ abstract public class Process {
                         this.txCommand = matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[1];
                         txNo = Integer.parseInt(this.txCommand.split(TX_MSG_SEPARATOR, 2)[0].trim());
                         return true;
-                    } else
+                    } else {
+                        currentState = ProcessState.Uncertain;
+                        abort();
                         return false;
+                    }
                 }
             }
         }
@@ -381,8 +385,10 @@ abstract public class Process {
                 case UNCERTAIN:
                 case COMMITABLE:
                     recoverStates.put(fromProcId, isRecoveredProcess);
-                    if (!isRecoveredProcess)
+                    if (!isRecoveredProcess) {
+                        isAnyOneOperational = true;
                         return;
+                    }
                     else {
                         if (recoverStates.size() == recoverUP.size())
                             return;
@@ -632,6 +638,8 @@ abstract public class Process {
                 }
                 break;
             case TIMEOUT:
+                if(isAnyOneOperational && recovered)
+                    break;      //Wait for getting an abort or commit
                 if (interimCoodrinator) {
                     if (isWaitingForAck) {
                         commit();
@@ -743,7 +751,7 @@ abstract public class Process {
 
         }
         recovered = false;
-
+        isAnyOneOperational = false;
         //Add the transaction message into the playlist instruction
         try {
             FileWriter fileWriter = new FileWriter(playListInstructions, true);
