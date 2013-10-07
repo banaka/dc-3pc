@@ -361,7 +361,7 @@ abstract public class Process {
             String msg = waitForRecoveryStatusMsg(recoverStates);
             String[] msgFields = msg.split(MsgGen.MSG_FIELD_SEPARATOR);
             int fromProcId = Integer.parseInt(msgFields[MsgGen.processNo].trim());
-            boolean isRecoveredProcess = Boolean.parseBoolean(msgFields[MsgGen.msgData]);
+//            boolean isRecoveredProcess = Boolean.parseBoolean(msgFields[MsgGen.msgData]);
 
             MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFields[MsgGen.msgContent]);
 
@@ -375,17 +375,17 @@ abstract public class Process {
                     sendMsg(Enum.valueOf(MsgContent.class, currentState.msgState), Boolean.toString(recovered), fromProcId);
                     break;
                 case COMMITED:
-                    recoverStates.put(fromProcId, isRecoveredProcess);
+                    recoverStates.put(fromProcId, Boolean.parseBoolean(msgFields[MsgGen.msgData]));
                     commit();
                     return;
                 case ABORTED:
-                    recoverStates.put(fromProcId, isRecoveredProcess);
+                    recoverStates.put(fromProcId, Boolean.parseBoolean(msgFields[MsgGen.msgData]));
                     abort();
                     return;
                 case UNCERTAIN:
                 case COMMITABLE:
-                    recoverStates.put(fromProcId, isRecoveredProcess);
-                    if (!isRecoveredProcess) {
+                    recoverStates.put(fromProcId, Boolean.parseBoolean(msgFields[MsgGen.msgData]));
+                    if (!Boolean.parseBoolean(msgFields[MsgGen.msgData])) {
                         isAnyOneOperational = true;
                         return;
                     }
@@ -593,6 +593,8 @@ abstract public class Process {
                 sendStateRequestRes(fromProcId);
                 break;
             case VOTE_REQ:
+                if(isAnyOneOperational && recovered)
+                    break;      //Wait for getting an abort or commit
                 logger.info(LogMsgType.REC_VOTE_REQ.txt + MsgGen.MSG_FIELD_SEPARATOR + txCommand);
                 try {
                     coordinator = fromProcId;
@@ -613,6 +615,8 @@ abstract public class Process {
                 sendMsg(MsgContent.ACK, "", fromProcId);
                 break;
             case U_R_COORDINATOR:
+                if(isAnyOneOperational && recovered)
+                    break;      //Wait for getting an abort or commit
                 if (currentState == ProcessState.WaitForVotReq)
                     break;
                 //update my uplist
