@@ -21,7 +21,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Config {
-
+    public int msgCountFrom;
+    public int partialCommitTo;
     public int txNo;
     public int aliveTimeout;
     public Properties prop;

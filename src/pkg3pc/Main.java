@@ -20,9 +20,19 @@ public class Main {
             Helper.clearLogs("PlayListInstruction" + pid + ".txt");
         }
         if (args.length > 1)
-            vote = Boolean.parseBoolean(args[1]);
+            if("true".equals(args[1]) || "false".equals(args[1]))
+                vote = Boolean.parseBoolean(args[1]);
+
         if( args.length > 2)
-            msgCount = Integer.parseInt(args[2]);
+            if(!("-1".equals(args[2])))
+                msgCount = Integer.parseInt(args[2]);
+
+        if( args.length > 3)
+                config.msgCountFrom = Integer.parseInt(args[3]);
+
+        if( args.length > 4)
+                config.partialCommitTo = Integer.parseInt(args[4]);
+
         if (pid == 0) {
 //            config.updateTx();
             p = new CoordinatorImpl(n, pid, vote, msgCount, config);

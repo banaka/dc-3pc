@@ -107,7 +107,8 @@ public class CoordinatorImpl extends Process implements Coordinator {
         logger.info(LogMsgType.COMMIT.txt);
         for (int i = 0; i < noOfProcesses; i++) {
             if (i != procNo)
-                sendMsg(MsgContent.COMMIT, "", i);
+                if(partialCommitTo != -1 && partialCommitTo == i)
+                    sendMsg(MsgContent.COMMIT, "", i);
         }
         commit();
     }

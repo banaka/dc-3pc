@@ -36,8 +36,13 @@ abstract public class Process {
 
     ProcessBackground processBackground;
     boolean vote;
+
     int totalMessageReceived;
     int totalMessageToReceive;
+    int totalMessageToReceiveFrom;
+
+    int partialCommitTo;
+
     String logFileName;
     String playListInstructions;
     public Logger logger;
@@ -64,6 +69,9 @@ abstract public class Process {
     }
 
     Process(NetController netController, int procNo, Boolean voteInput, int msgCount, Config config) {
+        totalMessageToReceiveFrom = config.msgCountFrom;
+        partialCommitTo = config.partialCommitTo;
+
         this.netController = netController;
         this.vote = voteInput;
         this.procNo = procNo;
@@ -92,7 +100,8 @@ abstract public class Process {
     public void sendMsgToN(MsgContent msgContent) {
         for (int i = 0; i < config.numProcesses; i++) {
             if (i != procNo)
-                sendMsg(msgContent, "", i);
+                if(partialCommitTo != -1 && msgContent == MsgContent.COMMIT && partialCommitTo == i)
+                    sendMsg(msgContent, "", i);
         }
     }
 
@@ -102,7 +111,8 @@ abstract public class Process {
             while (it.hasNext()) {
                 int n = it.next();
                 if (n != this.procNo)
-                    sendMsg(msgContent, "", n);
+                    if(partialCommitTo != -1 && msgContent == MsgContent.COMMIT && partialCommitTo == n)
+                        sendMsg(msgContent, "", n);
             }
         }
     }
@@ -142,7 +152,7 @@ abstract public class Process {
 
     void updateMessagesReceived() {
         totalMessageReceived++;
-        if (totalMessageToReceive != 0 && totalMessageReceived >= totalMessageToReceive) {
+        if (totalMessageReceived >= totalMessageToReceive) {
             logger.log(Level.SEVERE, "CRASHING!...Expected Number of messages received");
             System.exit(0);
         }
@@ -483,7 +493,7 @@ abstract public class Process {
             String msg = waitTillTimeoutForMessage(globalCounter, globalTimeout);
             String[] msgFields = msg.split(MsgGen.MSG_FIELD_SEPARATOR);
             int fromProcId = Integer.parseInt(msgFields[MsgGen.processNo].trim());
-            if (fromProcId != procNo) {
+            if (totalMessageToReceiveFrom != -1 && fromProcId == totalMessageToReceiveFrom) {
                 updateMessagesReceived();
             }
             MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFields[MsgGen.msgContent]);
@@ -729,7 +739,7 @@ abstract public class Process {
     }
 
     /**
-     * *************************************TERMINATION PROTOCOL STUFF ************************
+     * *************************************TERMINATION PROTOCOL STUFF ENDS************************
      */
 
     public void commit() {
