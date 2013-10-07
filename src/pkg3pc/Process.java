@@ -17,6 +17,7 @@ import java.util.logging.*;
 abstract public class Process {
 
     public final static String TX_MSG_SEPARATOR = "\\$";
+    public final static String TX_MSG_SEPARATOR_ADD = "$";
     public Config config;
 
     Set<Integer> up = new HashSet<Integer>();
@@ -84,12 +85,7 @@ abstract public class Process {
 //        }
         //When starting the process initiate its playlist based of the values present in the playlist instructions
         recoverPlayList();
-        if (isRecoveryNeeded()) {
-            recovered = true;
-            recoverProcessStatus();
-        } else {
-            recovered = false;
-        }
+        recoverFromLogs();
         processBackground.start();
     }
 
@@ -181,11 +177,6 @@ abstract public class Process {
         sendMsg(Enum.valueOf(MsgContent.class, currentState.msgState), "", procId);
     }
 
-//    public void updateUpSet(int procId) {
-//        synchronized (upReply) {
-//            upReply.add(procId);
-//        }
-//    }
 
     /**
      * This Function Makes sure that the processes reset their state once every transaction is completed.
@@ -195,7 +186,6 @@ abstract public class Process {
             initTransaction();
         }
     }
-
     public void recoverPlayList() {
         try {
             FileReader file = new FileReader(playListInstructions);
@@ -232,6 +222,16 @@ abstract public class Process {
         }
     }
 
+    /*************** RECOVERY STUFF STARTS ***************************************/
+    private void recoverFromLogs() {
+        if (isRecoveryNeeded()) {
+            recovered = true;
+            recoverProcessStatus();
+        } else {
+            recovered = false;
+        }
+    }
+
     public boolean isRecoveryNeeded() {
         try {
             FileReader file = new FileReader(logFileName);
@@ -248,57 +248,7 @@ abstract public class Process {
         } catch (IOException e) {
             logger.log(Level.FINE, "Unable to read the Log File. Recovery is not needed " + e);
         }
-//        finally {
-//            this.processBackground.start();
-//        }
         return false;
-    }
-
-    public void recoverProcessStatus() {
-        //a. Cannot recover untill we have up a subet of recoversubset
-        //b. Cannot recover untill we have recoverUp non zero, non null
-        //c. IF recover is equal to itself then just ACT on the state you have
-
-//        if (recoverUP == null || recoverUP.size() == 0) {
-//            System.out.println("Need to decide but do not have anything in UP");
-//            //cannot have recovery
-//            //TODO :ERROR as we need the upset to go further the process cannot recover
-//        } else
-        if (recoverUP.size() == 1) {
-            //TELL ALL WHAT THE DECISION IS
-            switch (currentState) {
-                case Commitable:
-                    commit();
-                    sendMsgToN(MsgContent.COMMIT);
-                    break;
-                case Uncertain:
-                    abort();
-                    sendMsgToN(MsgContent.ABORT);
-                    break;
-                default:
-                    logger.log(Level.WARNING, "!!!!!!!!!!!!!State not Handled!!!!!!!!!!!" + currentState);
-            }
-        } else {
-            //Asking State Req to all present in recover
-            Iterator<Integer> it = recoverUP.iterator();
-            while (it.hasNext()) {
-                Integer i = it.next();
-                if (i != procNo)
-                    sendMsg(MsgContent.STATUS_REQ, txNo + "", i);
-            }
-            up = recoverUP;
-            //Check that all in up have come recover up have come up
-//            logger.log(Level.CONFIG, "Waiting for the RecoverUP process to come up " + recoverUP);
-//            while (!allWhoRUp.containsAll(recoverUP)) {
-//                sleeping_for(10);
-//            }
-//            logger.log(Level.CONFIG, "RecoverUP has come inside " + allWhoRUp);
-            //do not work until we get response form someone
-            //sendMsg(MsgContent.STATUS_REQ, "", up.iterator().next());
-            //Wait for response from all otherwise ?????
-            startRecoverWaiting();
-        }
-
     }
 
     private boolean extractFromLogFile(List<String> logFile) {
@@ -335,26 +285,97 @@ abstract public class Process {
                     return false;
                 } else if (matcher.contains(LogMsgType.PRECOMMIT.txt)) {
                     currentState = ProcessState.Commitable;
-                    this.txCommand = matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[1];
+                    this.txCommand = matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[2];
                     txNo = Integer.parseInt(this.txCommand.split(TX_MSG_SEPARATOR, 1)[0].trim());
                     return true;
                 } else if (matcher.contains(LogMsgType.COMMIT.txt)) {
-                    this.txCommand = matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[1];
+                    this.txCommand = matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[2];
                     txNo = Integer.parseInt(this.txCommand.split(TX_MSG_SEPARATOR, 1)[0].trim());
                     currentState = ProcessState.Commitable;
                     commit();
                     return false;
                 } else if (matcher.contains(LogMsgType.VOTEYES.txt)) {
                     currentState = ProcessState.Uncertain;
-                    this.txCommand = matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[1];
-                    txNo = Integer.parseInt(this.txCommand.split(TX_MSG_SEPARATOR, 1)[0].trim());
-                    return true;
+                    if(!wasCoordinator) {
+                        this.txCommand = matcher.split(MsgGen.MSG_FIELD_SEPARATOR)[2];
+                        txNo = Integer.parseInt(this.txCommand.split(TX_MSG_SEPARATOR, 1)[0].trim());
+                        return true;
+                    } else
+                        return false;
                 }
             }
         }
         return false;
     }
 
+    public void recoverProcessStatus() {
+//            //TODO :ERROR as we need the upset to go further the process cannot recover
+        if (recoverUP.size() == 1) {
+            //TELL ALL WHAT THE DECISION IS
+            switch (currentState) {
+                case Commitable:
+                    commit();
+                    sendMsgToN(MsgContent.COMMIT);
+                    break;
+                case Uncertain:
+                    abort();
+                    sendMsgToN(MsgContent.ABORT);
+                    break;
+                default:
+                    logger.log(Level.WARNING, "!!!!!!!!!!!!!State not Handled!!!!!!!!!!!" + currentState);
+            }
+        } else {
+            //Asking State Req to all present in recover
+            Iterator<Integer> it = recoverUP.iterator();
+            while (it.hasNext()) {
+                Integer i = it.next();
+                if (i != procNo)
+                    sendMsg(MsgContent.STATUS_REQ, txNo + "", i);
+            }
+            up = recoverUP;
+            startRecoverWaiting();
+        }
+
+    }
+    public void startRecoverWaiting() {
+        Map<Integer, MsgContent> inputStates = new HashMap<Integer, MsgContent>();
+        Map<Integer, Boolean> recoverStates = new HashMap<Integer, Boolean>();
+        boolean isAnyOneOperational = false;
+        while (true) {
+            String msg = waitForRecoveryStatusMsg();
+            String[] msgFields = msg.split(MsgGen.MSG_FIELD_SEPARATOR);
+            int fromProcId = Integer.parseInt(msgFields[MsgGen.processNo].trim());
+            boolean isRecoveredProcess = Boolean.parseBoolean(msgFields[MsgGen.msgData]);
+            recoverStates.put(fromProcId, isRecoveredProcess);
+            isAnyOneOperational = !isRecoveredProcess;
+            MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFields[MsgGen.msgContent]);
+
+            logger.log(Level.CONFIG, msgContent.content + ";Recovery Message From :" + fromProcId + ";current state: " + currentState);
+            //I will come out of this loop only if
+            //I will commit or abort as per other processes say on the txNo i gave
+            //If they say uncertain, that means they are also on the same Tx right now
+            //So no need to check for TxNo with the received message.
+            switch (msgContent) {
+                case COMMITED:
+                    commit();
+                    return;
+                case ABORTED:
+                    abort();
+                    return;
+                case UNCERTAIN:
+                case COMMITABLE:
+                    if (isAnyOneOperational)
+                        return;
+                    else {
+                        if (recoverStates.size() == recoverUP.size())
+                            return;
+                    }
+                    break;
+                case READY:
+                    break;
+            }
+        }
+    }
     public void getRecoverUpset(String str) {
         if (str.contains((LogMsgType.UPSET.txt))) {
             String[] set = str.substring(str.lastIndexOf("[") + 1, str.lastIndexOf("]")).split(",");
@@ -364,6 +385,16 @@ abstract public class Process {
         }
         recoverUP.add(procNo);
     }
+
+    private String waitForRecoveryStatusMsg() {
+        String msg;
+        while ((msg = this.netController.getReceivedMsgMain()) == null) {
+            sleeping_for(10);
+        }
+        return msg;
+    }
+
+    /******************* RECOVERY STUFF ENDS ********************************/
 
     public void initTransaction() {
         interimCoodrinator = false;
@@ -461,66 +492,9 @@ abstract public class Process {
         }
     }
 
-    public void startRecoverWaiting() {
-        Map<Integer, MsgContent> inputStates = new HashMap<Integer, MsgContent>();
-        Map<Integer, Boolean> recoverStates = new HashMap<Integer, Boolean>();
-        boolean isAnyOneOperational = false;
-        while (true) {
-            String msg = waitForRecoveryStatusMsg();
-            String[] msgFields = msg.split(MsgGen.MSG_FIELD_SEPARATOR);
-            int fromProcId = Integer.parseInt(msgFields[MsgGen.processNo].trim());
-            boolean isRecoveredProcess = Boolean.parseBoolean(msgFields[MsgGen.msgData]);
-            recoverStates.put(fromProcId, isRecoveredProcess);
-            isAnyOneOperational = !isRecoveredProcess;
-            MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFields[MsgGen.msgContent]);
-
-            logger.log(Level.CONFIG, msgContent.content + ";Recovery Message From :" + fromProcId + ";current state: " + currentState);
-            //I will come out of this loop only if
-            //I will commit or abort as per other processes say on the txNo i gave
-            //If they say uncertain, that means they are also on the same Tx right now
-            //So no need to check for TxNo with the received message.
-            switch (msgContent) {
-                case COMMITED:
-                    commit();
-                    return;
-                case ABORTED:
-                    abort();
-                    return;
-                case COMMITABLE:
-                case UNCERTAIN:
-                    if (isAnyOneOperational)
-                        return;
-                    else {
-                        if (recoverStates.size() == recoverUP.size())
-                            return;
-                    }
-//                    inputStates.put(fromProcId, msgContent);
-//                    if (inputStates.size() == recoverUP.size()-1) {
-//                        if (inputStates.containsValue(MsgContent.COMMITABLE)) {
-//                            //precommit();
-//                            //Chose coordinator
-//                        } else {
-//                            //Otherwise it implies everyone else is in COMMITTABLE state and we need to COMMIT
-//                            abort();
-//                        }
-//                        return;
-//                    }
-                    break;
-            }
-        }
-    }
-
-    private String waitForRecoveryStatusMsg() {
-        String msg;
-        while ((msg = this.netController.getReceivedMsgMain()) == null) {
-            sleeping_for(10);
-        }
-        return msg;
-    }
-
     public void abort() {
         if (currentState == ProcessState.WaitForVotReq || currentState == ProcessState.Commited) {
-            logger.log(Level.SEVERE, "Error: Previous state " + currentState.msgState + " doesn't allow to abort!");
+            logger.log(Level.SEVERE, "Error: Previous state " + currentState + " doesn't allow to abort!");
             return;
         }
         if (currentState != ProcessState.Aborted) {
@@ -550,6 +524,9 @@ abstract public class Process {
     public boolean handleSpecificCommands(MsgContent msgContent, String[] msgFields) {
         int fromProcId = Integer.parseInt(msgFields[MsgGen.processNo].trim());
         switch (msgContent) {
+            case READY:
+                abort();
+                break;
             case COMMITED:
             case ABORTED:
                 interimStates.put(fromProcId, msgContent);
@@ -586,6 +563,8 @@ abstract public class Process {
                 sendMsg(MsgContent.ACK, "", fromProcId);
                 break;
             case U_R_COORDINATOR:
+                if(currentState == ProcessState.WaitForVotReq)
+                    break;
                 //update my uplist
                 if (!interimCoodrinator) {
                     updateCoordinator(fromProcId);
@@ -697,7 +676,7 @@ abstract public class Process {
         logger.log(Level.INFO, LogMsgType.COMMIT.txt + MsgGen.MSG_FIELD_SEPARATOR + txCommand);
         //logger.log(Level.INFO, txCommand);
         currentState = ProcessState.Commited;
-        String[] txDetail = txCommand.split(TX_MSG_SEPARATOR, 1);
+        String[] txDetail = txCommand.split(TX_MSG_SEPARATOR, 2);
         String[] cmd = txDetail[1].split(TX_MSG_SEPARATOR);
         switch (playlistCommand.valueOf(cmd[0])) {
             case ADD:

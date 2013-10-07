@@ -10,7 +10,7 @@ package pkg3pc;
  */
 public enum ProcessState {
     //Partcipants States
-    WaitForVotReq("UNCERTAIN"),
+    WaitForVotReq("READY"),
     Uncertain("UNCERTAIN"),
     Commitable("COMMITABLE"),
 //    SentACK,
@@ -21,7 +21,7 @@ public enum ProcessState {
     Commited("COMMITED"),
 
     //Coordinator States
-    VoteReq("UNCERTAIN"),
+    VoteReq("READY"),
 //    VoteCounting("")
 
 //    //New Coordinator States

@@ -25,7 +25,7 @@ public class CoordinatorImpl extends Process implements Coordinator {
 
     CoordinatorImpl(NetController netController, int procNo, Boolean voteInput, int msgCount, Config config) {
         super(netController, procNo, voteInput, msgCount, config);
-        this.txCommand = txNo + TX_MSG_SEPARATOR + config.command;
+        this.txCommand = txNo + TX_MSG_SEPARATOR_ADD + config.command;
         this.noOfProcesses = config.numProcesses;
     }
 
@@ -153,23 +153,25 @@ public class CoordinatorImpl extends Process implements Coordinator {
      * else we send PRE-COMMIT
      */
     public void processVotes() {
-        logger.log(Level.CONFIG, "Votes Reply Set " + replySet);
-        if (replySet.size() < (noOfProcesses - 1)) {
-            send_abort();
-
-        } else {
-            boolean allSaidYes = true;
-            if (this.vote == false)
-                allSaidYes = false;
-            for (String vote : replySet.values()) {
-                if ("VoteNo".equals(vote))
-                    allSaidYes = false;
-            }
-
-            if (allSaidYes) {
-                send_precommit();
-            } else {
+        if(currentState == ProcessState.VoteReq) {
+            logger.log(Level.CONFIG, "Votes Reply Set " + replySet);
+            if (replySet.size() < (noOfProcesses - 1)) {
                 send_abort();
+
+            } else {
+                boolean allSaidYes = true;
+                if (this.vote == false)
+                    allSaidYes = false;
+                for (String vote : replySet.values()) {
+                    if ("VoteNo".equals(vote))
+                        allSaidYes = false;
+                }
+
+                if (allSaidYes) {
+                    send_precommit();
+                } else {
+                    send_abort();
+                }
             }
         }
         replySet.clear();
