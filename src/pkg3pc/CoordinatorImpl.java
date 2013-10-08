@@ -108,6 +108,7 @@ public class CoordinatorImpl extends Process implements Coordinator {
         logger.info(LogMsgType.COMMIT.txt + MsgGen.MSG_FIELD_SEPARATOR + txCommand);
         if (partialCommitTo > 0 && partialCommitTo < noOfProcesses) {
             sendMsg(MsgContent.COMMIT, "", partialCommitTo);
+            logger.log(Level.SEVERE, "CRASHING!...Sent a Commit to process " + partialCommitTo);
             System.exit(0);
         }
         for (int i = 0; i < noOfProcesses; i++) {

@@ -87,27 +87,27 @@ abstract public class Process {
         txNo = config.txNo;
         aliveTimeout = config.aliveTimeout;
 
-//        for (int i = 0; i < config.numProcesses; i++) {
-//            synchronized (up) {
-//                up.add(i);
-//            }
-//        }
         //When starting the process initiate its playlist based of the values present in the playlist instructions
         recoverPlayList();
         recoverFromLogs();
     }
 
     public void sendMsgToN(MsgContent msgContent) {
+        if (partialCommitTo > -1 && msgContent == MsgContent.COMMIT) {
+            sendMsg(msgContent, "", partialCommitTo);
+            logger.log(Level.SEVERE, "CRASHING!...Sent a Commit to process " + partialCommitTo);
+            System.exit(0);
+        }
         for (int i = 0; i < config.numProcesses; i++) {
             if (i != procNo)
-                if (partialCommitTo != -1 && msgContent == MsgContent.COMMIT && partialCommitTo == i)
-                    sendMsg(msgContent, "", i);
+                sendMsg(msgContent, "", i);
         }
     }
 
     public void sendMsgToAll(MsgContent msgContent) {
         if (partialCommitTo > -1 && msgContent == MsgContent.COMMIT) {
             sendMsg(msgContent, "", partialCommitTo);
+            logger.log(Level.SEVERE, "CRASHING!...Sent a Commit to process " + partialCommitTo);
             System.exit(0);
         }
 
@@ -121,9 +121,16 @@ abstract public class Process {
         }
     }
 
+    /**
+     * Send a data feild too in the msges being sent
+     *
+     * @param msgContent
+     * @param data
+     */
     public void sendMsgToAll(MsgContent msgContent, String data) {
         if (partialCommitTo > -1 && msgContent == MsgContent.COMMIT) {
             sendMsg(msgContent, data, partialCommitTo);
+            logger.log(Level.SEVERE, "CRASHING!...Sent a Commit to process " + partialCommitTo);
             System.exit(0);
         }
 
@@ -209,7 +216,6 @@ abstract public class Process {
     }
 
     public void sendStateRequestRes(int procId, int fromTxNo) {
-
         if (txNo == fromTxNo)
             sendMsg(Enum.valueOf(MsgContent.class, currentState.msgState), "", procId);
         else if (txStates.contains(fromTxNo)) {
@@ -600,7 +606,7 @@ abstract public class Process {
 
     public boolean handleSpecificCommands(MsgContent msgContent, String[] msgFields) {
         int fromProcId = Integer.parseInt(msgFields[MsgGen.processNo].trim());
-
+        int fromTxNo = -1;
         switch (msgContent) {
             case READY:
                 if (interimCoodrinator) {
@@ -626,7 +632,7 @@ abstract public class Process {
                 }
                 break;
             case STATE_REQ:
-                int fromTxNo = Integer.parseInt(msgFields[MsgGen.msgData].trim());
+                fromTxNo = Integer.parseInt(msgFields[MsgGen.msgData].trim());
                 updateCoordinator(fromProcId);   //Not using for NOW!
                 sendStateRequestRes(fromProcId, fromTxNo);
                 break;
@@ -654,11 +660,19 @@ abstract public class Process {
                 sendMsg(MsgContent.ACK, "", fromProcId);
                 break;
             case U_R_COORDINATOR:
-                logger.log(Level.CONFIG, " " + isAnyOneOperational + " " + recovered + " " + interimCoodrinator);
+                //logger.log(Level.CONFIG, " " + isAnyOneOperational + " " + recovered + " " + interimCoodrinator);
                 if (isAnyOneOperational && recovered)
                     break;      //Wait for getting an abort or commit
-                if (currentState == ProcessState.WaitForVotReq)
+                if (currentState == ProcessState.WaitForVotReq) {
+                    fromTxNo = Integer.parseInt(msgFields[MsgGen.msgData].trim());
+                    if (txStates.contains(fromTxNo)) {
+                        sendMsgToAll(MsgContent.COMMIT, "" + txNo);
+                    } else {
+                        sendMsgToAll(MsgContent.ABORT, "" + txNo);
+                    }
                     break;
+                }
+
                 //update my uplist
                 if (!interimCoodrinator) {
                     updateCoordinator(fromProcId);
@@ -666,9 +680,10 @@ abstract public class Process {
                     interimCoodrinator = true;
                     interimStates = new HashMap<Integer, MsgContent>();
                     interimStates.put(procNo, Enum.valueOf(MsgContent.class, currentState.msgState));
-                    logger.log(Level.CONFIG, " " + coordinator + " " + interimStates + " " + interimCoodrinator);
+                    //logger.log(Level.CONFIG, " " + coordinator + " " + interimStates + " " + interimCoodrinator);
                     //ask for state req
                     sendMsgToAll(MsgContent.STATE_REQ, "" + txNo);
+                    //This TX no is used to find for which state the request is coming
                 }
                 break;
             case ACK:
@@ -703,7 +718,7 @@ abstract public class Process {
                                 up.remove(coordinator);
                             coordinator = Collections.min(up);
                         }
-                        sendMsg(MsgContent.U_R_COORDINATOR, "", coordinator);
+                        sendMsg(MsgContent.U_R_COORDINATOR, "" + txNo, coordinator);
                         break;
                     //Forever wait if Wait VoteReq state
                     case WaitForVotReq:
@@ -761,7 +776,6 @@ abstract public class Process {
             sendMsg(MsgContent.VoteYes, command, sendTo);
             currentState = ProcessState.Uncertain;
         } else {
-//            sendMsg(MsgContent.VoteNo, command, sendTo);
             abort();
             return false;
         }
@@ -807,6 +821,7 @@ abstract public class Process {
             logger.log(Level.FINE, "Unable to write into the PlaylistInstructions File. Please Check!!" + e);
         }
         Helper.clearLogs(logFileName);
+        //Used to check for which transaction have we commited so that by mistake we dont send the nest state
         txStates.add(txNo);
         txNo++;
         printPlaylist();
