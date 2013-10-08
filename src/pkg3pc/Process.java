@@ -100,19 +100,23 @@ abstract public class Process {
     public void sendMsgToN(MsgContent msgContent) {
         for (int i = 0; i < config.numProcesses; i++) {
             if (i != procNo)
-                if(partialCommitTo != -1 && msgContent == MsgContent.COMMIT && partialCommitTo == i)
+                if (partialCommitTo != -1 && msgContent == MsgContent.COMMIT && partialCommitTo == i)
                     sendMsg(msgContent, "", i);
         }
     }
 
     public void sendMsgToAll(MsgContent msgContent) {
+        if (partialCommitTo > -1 && msgContent == MsgContent.COMMIT) {
+            sendMsg(msgContent, "", partialCommitTo);
+            System.exit(0);
+        }
+
         synchronized (up) {
             Iterator<Integer> it = up.iterator();
             while (it.hasNext()) {
                 int n = it.next();
                 if (n != this.procNo)
-                    if(partialCommitTo != -1 && msgContent == MsgContent.COMMIT && partialCommitTo == n)
-                        sendMsg(msgContent, "", n);
+                    sendMsg(msgContent, "", n);
             }
         }
     }
@@ -398,8 +402,7 @@ abstract public class Process {
                     if (!Boolean.parseBoolean(msgFields[MsgGen.msgData])) {
                         isAnyOneOperational = true;
                         return;
-                    }
-                    else {
+                    } else {
                         if (recoverStates.size() == recoverUP.size())
                             return;
                     }
@@ -585,7 +588,7 @@ abstract public class Process {
             case ABORTED:
                 if (interimCoodrinator) {
                     interimStates.put(fromProcId, msgContent);
-                    logger.log(Level.CONFIG,"Interim States set "+interimStates+" "+up);
+                    logger.log(Level.CONFIG, "Interim States set " + interimStates + " " + up);
                     return takeDecision();
                 }
                 break;
@@ -593,7 +596,7 @@ abstract public class Process {
             case UNCERTAIN:
                 if (interimCoodrinator) {
                     interimStates.put(fromProcId, msgContent);
-                    logger.log(Level.CONFIG,"Interim States set "+interimStates+" "+up);
+                    logger.log(Level.CONFIG, "Interim States set " + interimStates + " " + up);
                     if (interimStates.size() == up.size())
                         return takeDecision();
                 }
@@ -603,7 +606,7 @@ abstract public class Process {
                 sendStateRequestRes(fromProcId);
                 break;
             case VOTE_REQ:
-                if(isAnyOneOperational && recovered)
+                if (isAnyOneOperational && recovered)
                     break;      //Wait for getting an abort or commit
                 txCommand = new String(msgFields[MsgGen.msgData]);
                 logger.info(LogMsgType.REC_VOTE_REQ.txt + MsgGen.MSG_FIELD_SEPARATOR + txCommand);
@@ -626,7 +629,8 @@ abstract public class Process {
                 sendMsg(MsgContent.ACK, "", fromProcId);
                 break;
             case U_R_COORDINATOR:
-                if(isAnyOneOperational && recovered)
+                logger.log(Level.CONFIG, " " + isAnyOneOperational + " " + recovered + " " + interimCoodrinator);
+                if (isAnyOneOperational && recovered)
                     break;      //Wait for getting an abort or commit
                 if (currentState == ProcessState.WaitForVotReq)
                     break;
@@ -636,7 +640,8 @@ abstract public class Process {
                     coordinator = fromProcId;
                     interimCoodrinator = true;
                     interimStates = new HashMap<Integer, MsgContent>();
-                    interimStates.put(procNo,Enum.valueOf(MsgContent.class, currentState.msgState));
+                    interimStates.put(procNo, Enum.valueOf(MsgContent.class, currentState.msgState));
+                    logger.log(Level.CONFIG, " " + coordinator + " " + interimStates + " " + interimCoodrinator);
                     //ask for state req
                     sendMsgToAll(MsgContent.STATE_REQ);
                 }
@@ -653,7 +658,7 @@ abstract public class Process {
                 }
                 break;
             case TIMEOUT:
-                if(isAnyOneOperational && recovered)
+                if (isAnyOneOperational && recovered)
                     break;      //Wait for getting an abort or commit
                 if (interimCoodrinator) {
                     if (isWaitingForAck) {
@@ -778,6 +783,17 @@ abstract public class Process {
         }
         Helper.clearLogs(logFileName);
         txNo++;
+        printPlaylist();
+    }
+
+    public void printPlaylist() {
+        logger.log(Level.CONFIG, "Printing Playlist for the process " + procNo);
+        Iterator<Map.Entry<String, String>> it = playlist.entrySet().iterator();
+
+        while (it.hasNext()) {
+            Map.Entry<String, String> entry = it.next();
+            logger.log(Level.CONFIG, " Song " + entry.getKey() + " URL " + entry.getValue());
+        }
     }
 }
 

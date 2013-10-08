@@ -31,7 +31,7 @@ public class CoordinatorImpl extends Process implements Coordinator {
 
     @Override
     public void initTransaction() {
-        if(!recovered){
+        if (!recovered) {
             currentState = ProcessState.VoteReq;
             logger.info(LogMsgType.START3PC.txt);
             for (int i = 0; i < noOfProcesses; i++) {
@@ -57,8 +57,8 @@ public class CoordinatorImpl extends Process implements Coordinator {
 
     @Override
     public boolean handleSpecificCommands(MsgContent msgContent, String[] msgFields) {
-        if(recovered) {
-           return super.handleSpecificCommands(msgContent, msgFields);
+        if (recovered) {
+            return super.handleSpecificCommands(msgContent, msgFields);
         }
 
         boolean shouldContinue = true;
@@ -90,9 +90,10 @@ public class CoordinatorImpl extends Process implements Coordinator {
     }
 
     public void send_abort() {
-        for (int i = 0; i < noOfProcesses; i++)
+        sendMsgToAll(MsgContent.ABORT);
+//        for (int i = 0; i < noOfProcesses; i++)
 //            if (("VoteYes").equals(this.replySet.get(i)))
-                sendMsg(MsgContent.ABORT, "", i);
+//                sendMsg(MsgContent.ABORT, "", i);
         abort();
     }
 
@@ -100,15 +101,18 @@ public class CoordinatorImpl extends Process implements Coordinator {
     public void commit() {
         super.commit();
         config.updateTx();
-        //this.txCommand = txNo + TX_MSG_SEPARATOR_ADD + config.getCommand();
+        this.txCommand = txNo + TX_MSG_SEPARATOR_ADD + config.getCommand();
     }
 
     public void send_commit() {
-        logger.info(LogMsgType.COMMIT.txt);
+        logger.info(LogMsgType.COMMIT.txt + MsgGen.MSG_FIELD_SEPARATOR + txCommand);
+        if (partialCommitTo > 0 && partialCommitTo < noOfProcesses) {
+            sendMsg(MsgContent.COMMIT, "", partialCommitTo);
+            System.exit(0);
+        }
         for (int i = 0; i < noOfProcesses; i++) {
             if (i != procNo)
-                if(partialCommitTo != -1 && partialCommitTo == i)
-                    sendMsg(MsgContent.COMMIT, "", i);
+                sendMsg(MsgContent.COMMIT, "", i);
         }
         commit();
     }
@@ -126,7 +130,7 @@ public class CoordinatorImpl extends Process implements Coordinator {
     public void sendVoteRequests() {
         this.currentState = ProcessState.VoteReq;
         String txAppendNodes = appendParticipants(txCommand);
-        if(vote == true)
+        if (vote == true)
             logger.info(LogMsgType.VOTEYES.txt + MsgGen.MSG_FIELD_SEPARATOR + txCommand);
         //Need to do this because the up set gets over written even before these messages are sent out
         for (int i = 0; i < noOfProcesses; i++) {
@@ -164,7 +168,7 @@ public class CoordinatorImpl extends Process implements Coordinator {
      * else we send PRE-COMMIT
      */
     public void processVotes() {
-        if(currentState == ProcessState.VoteReq) {
+        if (currentState == ProcessState.VoteReq) {
             logger.log(Level.CONFIG, "Votes Reply Set " + replySet);
             if (replySet.size() < (noOfProcesses - 1)) {
                 send_abort();
