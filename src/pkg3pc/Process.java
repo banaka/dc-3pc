@@ -121,6 +121,22 @@ abstract public class Process {
         }
     }
 
+    public void sendMsgToAll(MsgContent msgContent, String data) {
+        if (partialCommitTo > -1 && msgContent == MsgContent.COMMIT) {
+            sendMsg(msgContent, data, partialCommitTo);
+            System.exit(0);
+        }
+
+        synchronized (up) {
+            Iterator<Integer> it = up.iterator();
+            while (it.hasNext()) {
+                int n = it.next();
+                if (n != this.procNo)
+                    sendMsg(msgContent, data, n);
+            }
+        }
+    }
+
     private void setLogger() {
         logger = Logger.getLogger("MyLog");
         logger.setUseParentHandlers(false);
@@ -192,8 +208,15 @@ abstract public class Process {
         this.netController.sendMsg(sendTo, outputMsg, delay);
     }
 
-    public void sendStateRequestRes(int procId) {
-        sendMsg(Enum.valueOf(MsgContent.class, currentState.msgState), "", procId);
+    public void sendStateRequestRes(int procId, int fromTxNo) {
+
+        if (txNo == fromTxNo)
+            sendMsg(Enum.valueOf(MsgContent.class, currentState.msgState), "", procId);
+        else if (txStates.contains(fromTxNo)) {
+            sendMsg(Enum.valueOf(MsgContent.class, ProcessState.Commited.msgState), "", procId);
+        } else {
+            sendMsg(Enum.valueOf(MsgContent.class, ProcessState.Aborted.msgState), "", procId);
+        }
     }
 
 
@@ -577,6 +600,7 @@ abstract public class Process {
 
     public boolean handleSpecificCommands(MsgContent msgContent, String[] msgFields) {
         int fromProcId = Integer.parseInt(msgFields[MsgGen.processNo].trim());
+
         switch (msgContent) {
             case READY:
                 if (interimCoodrinator) {
@@ -602,8 +626,9 @@ abstract public class Process {
                 }
                 break;
             case STATE_REQ:
+                int fromTxNo = Integer.parseInt(msgFields[MsgGen.msgData].trim());
                 updateCoordinator(fromProcId);   //Not using for NOW!
-                sendStateRequestRes(fromProcId);
+                sendStateRequestRes(fromProcId, fromTxNo);
                 break;
             case VOTE_REQ:
                 if (isAnyOneOperational && recovered)
@@ -643,7 +668,7 @@ abstract public class Process {
                     interimStates.put(procNo, Enum.valueOf(MsgContent.class, currentState.msgState));
                     logger.log(Level.CONFIG, " " + coordinator + " " + interimStates + " " + interimCoodrinator);
                     //ask for state req
-                    sendMsgToAll(MsgContent.STATE_REQ);
+                    sendMsgToAll(MsgContent.STATE_REQ, "" + txNo);
                 }
                 break;
             case ACK:
@@ -782,6 +807,7 @@ abstract public class Process {
             logger.log(Level.FINE, "Unable to write into the PlaylistInstructions File. Please Check!!" + e);
         }
         Helper.clearLogs(logFileName);
+        txStates.add(txNo);
         txNo++;
         printPlaylist();
     }
