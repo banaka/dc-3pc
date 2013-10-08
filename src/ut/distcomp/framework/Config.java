@@ -26,6 +26,7 @@ public class Config {
     public int txNo;
     public int aliveTimeout;
     public Properties prop;
+
     /**
      * Loads config from a file.  Optionally puts in 'procNum' if in file.
      * See sample file for syntax
@@ -43,8 +44,10 @@ public class Config {
         aliveTimeout = 2000;
         if (prop.getProperty("delay") != null) {
             delay = Helper.loadInt(prop, "delay");
-            timeout = 3 * delay;
+        } else {
+            delay = 10;
         }
+        timeout = 3 * delay;
         if (prop.getProperty("timeout") != null)
             timeout = Helper.loadInt(prop, "timeout");
         if (prop.getProperty("timeout") != null)
@@ -86,7 +89,7 @@ public class Config {
 
     public String getCommand() {
         command = (prop.getProperty("command" + txNo));
-        if(command == null)
+        if (command == null)
             command = prop.getProperty("command");
         command = command.trim();
         return command;
