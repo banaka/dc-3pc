@@ -572,7 +572,7 @@ abstract public class Process {
                     ProcessState p = currentState;
                     int askedForTx = Integer.parseInt(msgFields[MsgGen.msgData].trim());
                     if (askedForTx != txNo) {
-                        if (txStates.contains(txCommand))
+                        if (txStates.contains(askedForTx))
                             p = ProcessState.Commited;
                         else
                             p = ProcessState.Aborted;
@@ -580,12 +580,6 @@ abstract public class Process {
                     sendMsg(Enum.valueOf(MsgContent.class, p.msgState), Boolean.toString(recovered), fromProcId);
                     //sendStatusRequestRes(fromProcId);
                     break;
-//                case CHECKALIVE:
-//                    sendMsg(MsgContent.IAMALIVE, "", fromProcId);
-//                    break;
-//                case IAMALIVE:
-//                    updateUpSet(fromProcId);
-//                    break;
                 default:
                     shouldContinue = handleSpecificCommands(msgContent, msgFields);
             }
@@ -728,7 +722,7 @@ abstract public class Process {
                 if (interimCoodrinator) {
                     if (isWaitingForAck) {
                         commit();
-                        sendMsgToAll(MsgContent.COMMIT);
+                        sendMsgToN(MsgContent.COMMIT);
                         isWaitingForAck = false;
                         return false;
                     }
