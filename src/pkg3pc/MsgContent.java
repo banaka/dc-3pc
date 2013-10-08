@@ -30,6 +30,7 @@ public enum MsgContent {
     COMMITED("COMMITED"),
     ABORTED("ABORTED"),
     READY("READY"),
+    STARTED("STARTED"),
     //Check if the process is alive 
     CHECKALIVE("CHECKALIVE"),
     IAMALIVE("IAMALIVE");

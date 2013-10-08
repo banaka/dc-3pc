@@ -19,9 +19,9 @@ public enum ProcessState {
     Aborted("ABORTED"),
 //    LoggedCommit("COMMITED"),
     Commited("COMMITED"),
-
+    ReceivedVoteReq("STARTED"),
     //Coordinator States
-    VoteReq("READY"),
+    VoteReq("STARTED"),
 //    VoteCounting("")
 
 //    //New Coordinator States

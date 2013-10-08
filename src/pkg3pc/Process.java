@@ -51,6 +51,7 @@ abstract public class Process {
     boolean recovered;
     public boolean interimCoodrinator = false;
     boolean isAnyOneOperational = false;
+    boolean wasCoordinator = false;
 
     public enum playlistCommand {
 
@@ -70,6 +71,8 @@ abstract public class Process {
 
     Process(NetController netController, int procNo, Boolean voteInput, int msgCount, Config config) {
         totalMessageToReceiveFrom = config.msgCountFrom;
+        totalMessageReceived = 0;
+        totalMessageToReceive = msgCount;
         partialCommitTo = config.partialCommitTo;
 
         this.netController = netController;
@@ -79,7 +82,6 @@ abstract public class Process {
         playlist = new Hashtable<String, String>();
         processBackground = new ProcessBackground(this);
         coordinator = -1;
-        totalMessageToReceive = msgCount;
         logFileName = "Log" + procNo + ".log";
         playListInstructions = "PlayListInstruction" + procNo + ".txt";
         setLogger();
@@ -316,7 +318,6 @@ abstract public class Process {
                 }
             }
         }
-        boolean wasCoordinator = false;
         for (int i = logFile.size() - 1; i >= 0; i--)
             if (logFile.get(i).contains("INFO:"))
                 if (logFile.get(i).contains((LogMsgType.START3PC.txt)))
@@ -437,7 +438,28 @@ abstract public class Process {
                     }
                     break;
                 case READY:
+                    if (wasCoordinator){
+                        abort();
+                        break;
+                    }
+                    currentState = ProcessState.WaitForVotReq;
+                    if (!Boolean.parseBoolean(msgFields[MsgGen.msgData])) {
+                        isAnyOneOperational = true;
+                        return;
+                    }
                     break;
+                case STARTED:         //IT will surely be participant and will start receiving Precommit/Abort
+                    if (wasCoordinator){
+                        abort();
+                        break;
+                    }
+                    currentState = ProcessState.ReceivedVoteReq;
+                    if (!Boolean.parseBoolean(msgFields[MsgGen.msgData])) {
+                        isAnyOneOperational = true;
+                        return;
+                    }
+                    break;
+
             }
         }
     }
@@ -478,6 +500,7 @@ abstract public class Process {
 
     public void initTransaction() {
         interimCoodrinator = false;
+        wasCoordinator = false;
         if (!recovered) {
             logger.info(LogMsgType.NEWTX.txt);
             currentState = ProcessState.WaitForVotReq;
@@ -609,6 +632,7 @@ abstract public class Process {
         int fromTxNo = -1;
         switch (msgContent) {
             case READY:
+            case STARTED:
                 if (interimCoodrinator) {
                     abort();
                     return false;
@@ -639,6 +663,7 @@ abstract public class Process {
             case VOTE_REQ:
                 if (isAnyOneOperational && recovered)
                     break;      //Wait for getting an abort or commit
+                currentState = ProcessState.ReceivedVoteReq;
                 txCommand = new String(msgFields[MsgGen.msgData]);
                 logger.info(LogMsgType.REC_VOTE_REQ.txt + MsgGen.MSG_FIELD_SEPARATOR + txCommand);
                 try {
@@ -743,11 +768,11 @@ abstract public class Process {
     private boolean takeDecision() {
         if (interimStates.containsValue(MsgContent.COMMITED)) {
             commit();
-            sendMsgToAll(MsgContent.COMMIT);
+            sendMsgToN(MsgContent.COMMIT);
             return false;
         } else if (interimStates.containsValue(MsgContent.ABORTED)) {
             abort();
-            sendMsgToAll(MsgContent.ABORT);
+            sendMsgToN(MsgContent.ABORT);
             return false;
         } else if (interimStates.containsValue(MsgContent.COMMITABLE)) {
             //IF anyone process is uncertain them Send precommit to all (Can be modified to be sedning it only to who are uncertain
@@ -760,12 +785,12 @@ abstract public class Process {
             } else {
                 //Otherwise it implies everyone else is in COMMITTABLE state and we need to COMMIT
                 commit();
-                sendMsgToAll(MsgContent.COMMIT);
+                sendMsgToN(MsgContent.COMMIT);
                 return false;
             }
         } else {
             abort();
-            sendMsgToAll(MsgContent.ABORT);
+            sendMsgToN(MsgContent.ABORT);
             return false;
         }
     }

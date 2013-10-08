@@ -10,12 +10,23 @@ import java.io.IOException;
  */
 public class Main {
 
+    /**
+     * args :
+     * 0 : pid of the process
+     * 1 : Vote for that process
+     * 2 : No of messages to be recieved from a process
+     * 3 : Proess from which we are to recieve these message
+     * 4 : Die after sending the messages to a process n
+     * @param n
+     * @param config
+     * @param args
+     */
     static void initiateProcess(NetController n, Config config, String[] args) {
         Process p;
         Boolean vote = true;
         int msgCount = 0;
         int pid = Integer.parseInt(args[0]);
-        if (config.clean != null) {
+        if (config.clean != null && Boolean.parseBoolean(config.clean.trim())) {
             Helper.clearLogs("Log" + pid + ".log");
             Helper.clearLogs("PlayListInstruction" + pid + ".txt");
         }
