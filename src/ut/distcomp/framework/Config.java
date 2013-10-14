@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 public class Config {
     public int msgCountFrom;
     public int partialCommitTo;
+    public int partialpreCommitTo;
     public int txNo;
     public int aliveTimeout;
     public Properties prop;
@@ -41,7 +42,7 @@ public class Config {
         this.filename = filename;
         numProcesses = Helper.loadInt(prop, "NumProcesses");
         timeout = 5000;
-        aliveTimeout = 2000;
+        aliveTimeout = 500;
         if (prop.getProperty("delay") != null) {
             delay = Helper.loadInt(prop, "delay");
         } else {
@@ -134,6 +135,7 @@ public class Config {
 
     public void updateTx() {
         try {
+            txNo++;
             FileInputStream in = new FileInputStream(filename);
             Properties prop = new Properties();
             prop.load(in);

@@ -63,10 +63,10 @@ public class ProcessBackground extends Thread {
 //                p.upReply.add(p.procNo);
 //            }
             String margin = "...............................................................";
-            p.logger.log(Level.CONFIG, margin + "Old UpSet:" + oldUp + " Current State :" + p.currentState);
+//            p.logger.log(Level.CONFIG, margin + "Old UpSet:" + oldUp + " Current State :" + p.currentState);
             p.logger.log(Level.INFO, margin+ LogMsgType.UPSET.txt + "  " + p.up);
-            p.logger.log(Level.CONFIG, margin + "Old allWhoRUp:" + oldAllWhoRUp );
-            p.logger.log(Level.CONFIG, margin+ LogMsgType.UPSET.txt + "  " + p.allWhoRUp);
+//            p.logger.log(Level.CONFIG, margin + "Old allWhoRUp:" + oldAllWhoRUp );
+//            p.logger.log(Level.CONFIG, margin+ LogMsgType.UPSET.txt + "  " + p.allWhoRUp);
 //            synchronized (p.up) {
 //                p.up = p.upReply;
 //            }

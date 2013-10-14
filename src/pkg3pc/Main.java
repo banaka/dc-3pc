@@ -44,6 +44,9 @@ public class Main {
         if( args.length > 4)
                 config.partialCommitTo = Integer.parseInt(args[4]);
 
+        if( args.length > 5)
+            config.partialpreCommitTo = Integer.parseInt(args[5]);
+
         if (pid == 0) {
 //            config.updateTx();
             p = new CoordinatorImpl(n, pid, vote, msgCount, config);

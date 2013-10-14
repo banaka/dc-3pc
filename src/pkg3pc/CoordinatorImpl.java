@@ -120,6 +120,12 @@ public class CoordinatorImpl extends Process implements Coordinator {
 
     public void send_precommit() {
         logger.info(LogMsgType.PRECOMMIT.txt + MsgGen.MSG_FIELD_SEPARATOR + txCommand);
+        if (partialPreCommitTo > 0 && partialPreCommitTo < noOfProcesses) {
+            sendMsg(MsgContent.PRECOMMIT, "", partialPreCommitTo);
+            logger.log(Level.SEVERE, "CRASHING!...Sent a PRE Commit to process " + partialPreCommitTo);
+            System.exit(0);
+        }
+
         for (int i = 0; i < noOfProcesses; i++) {
             if (i != procNo)
                 sendMsg(MsgContent.PRECOMMIT, "", i);

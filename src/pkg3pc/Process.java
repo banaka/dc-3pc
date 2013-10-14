@@ -42,6 +42,7 @@ abstract public class Process {
     int totalMessageToReceiveFrom;
 
     int partialCommitTo;
+    int partialPreCommitTo;
 
     String logFileName;
     String playListInstructions;
@@ -74,6 +75,7 @@ abstract public class Process {
         totalMessageReceived = 0;
         totalMessageToReceive = msgCount;
         partialCommitTo = config.partialCommitTo;
+        partialPreCommitTo = config.partialpreCommitTo;
 
         this.netController = netController;
         this.vote = voteInput;
@@ -100,6 +102,13 @@ abstract public class Process {
             logger.log(Level.SEVERE, "CRASHING!...Sent a Commit to process " + partialCommitTo);
             System.exit(0);
         }
+
+        if (partialPreCommitTo > -1 && msgContent == MsgContent.PRECOMMIT) {
+            sendMsg(msgContent, "", partialPreCommitTo);
+            logger.log(Level.SEVERE, "CRASHING!...Sent a Pre Commit to process " + partialPreCommitTo);
+            System.exit(0);
+        }
+
         for (int i = 0; i < config.numProcesses; i++) {
             if (i != procNo)
                 sendMsg(msgContent, "", i);
@@ -110,6 +119,12 @@ abstract public class Process {
         if (partialCommitTo > -1 && msgContent == MsgContent.COMMIT) {
             sendMsg(msgContent, "", partialCommitTo);
             logger.log(Level.SEVERE, "CRASHING!...Sent a Commit to process " + partialCommitTo);
+            System.exit(0);
+        }
+
+        if (partialPreCommitTo > -1 && msgContent == MsgContent.PRECOMMIT) {
+            sendMsg(msgContent, "", partialPreCommitTo);
+            logger.log(Level.SEVERE, "CRASHING!...Sent a Pre Commit to process " + partialPreCommitTo);
             System.exit(0);
         }
 
@@ -135,6 +150,12 @@ abstract public class Process {
             logger.log(Level.SEVERE, "CRASHING!...Sent a Commit to process " + partialCommitTo);
             System.exit(0);
         }
+        if (partialPreCommitTo > -1 && msgContent == MsgContent.PRECOMMIT) {
+            sendMsg(msgContent, "", partialPreCommitTo);
+            logger.log(Level.SEVERE, "CRASHING!...Sent a Pre Commit to process " + partialPreCommitTo);
+            System.exit(0);
+        }
+
 
         synchronized (up) {
             Iterator<Integer> it = up.iterator();
@@ -420,6 +441,7 @@ abstract public class Process {
                     break;
                 case COMMITED:
                     recoverStates.put(fromProcId, Boolean.parseBoolean(msgFields[MsgGen.msgData]));
+                    currentState = ProcessState.Commitable;
                     commit();
                     return;
                 case ABORTED:
@@ -440,7 +462,7 @@ abstract public class Process {
                 case READY:
                     if (wasCoordinator){
                         abort();
-                        break;
+                        return;
                     }
                     currentState = ProcessState.WaitForVotReq;
                     if (!Boolean.parseBoolean(msgFields[MsgGen.msgData])) {
@@ -548,9 +570,6 @@ abstract public class Process {
             String msg = waitTillTimeoutForMessage(globalCounter, globalTimeout);
             String[] msgFields = msg.split(MsgGen.MSG_FIELD_SEPARATOR);
             int fromProcId = Integer.parseInt(msgFields[MsgGen.processNo].trim());
-            if (totalMessageToReceiveFrom != -1 && fromProcId == totalMessageToReceiveFrom) {
-                updateMessagesReceived();
-            }
             MsgContent msgContent = Enum.valueOf(MsgContent.class, msgFields[MsgGen.msgContent]);
             boolean shouldContinue = true;
             String margin = "";
@@ -583,6 +602,10 @@ abstract public class Process {
                 default:
                     shouldContinue = handleSpecificCommands(msgContent, msgFields);
             }
+            if (totalMessageToReceiveFrom != -1 && fromProcId == totalMessageToReceiveFrom) {
+                updateMessagesReceived();
+            }
+
             if (!shouldContinue) {
                 break;
             }
